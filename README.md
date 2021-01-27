@@ -2,7 +2,7 @@
 DSC180B Capstone Project on Graph Data Analysis
 
 ## Project
-Amazon Product Recommendation using a graph-based approach.
+Amazon Product Recommendation using a graph-based neural network approach.
 
 ## Data
 Amazon Product Dataset from Professor Julian McAuley ([link](http://jmcauley.ucsd.edu/data/amazon/links.html))
