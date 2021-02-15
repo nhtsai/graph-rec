@@ -1,6 +1,8 @@
 # graph-rec
 DSC180B Capstone Project on Graph Data Analysis
 
+Project Website: https://nhtsai.github.io/graph-rec/
+
 ## Project
 Amazon Product Recommendation using a graph-based neural network approach.
 
