@@ -1,0 +1,7 @@
+{
+	"datadir": "data/test/",
+	"dataset_name": "Test Data",
+	"image_dataset": "image_features_test.b",
+	"meta_dataset": "meta_test.json.gz",
+	"output_fp": "data/test/data.pkl"
+}

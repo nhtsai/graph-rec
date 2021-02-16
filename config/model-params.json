@@ -1,0 +1,7 @@
+{
+	"test_size": 0.30,
+	"model_name": "PinSage",
+	"n_random_walks": 10,
+	"n_neighbors": 2,
+	"n_hidden": 16
+}

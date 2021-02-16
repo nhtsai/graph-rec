@@ -1,0 +1,7 @@
+{
+	"datadir": "data/",
+	"dataset_name": "Amazon Books",
+	"image_dataset": "image_features_Books.b",
+	"meta_dataset": "meta_Books.json.gz",
+	"output_fp": "data/data.pkl"
+}
