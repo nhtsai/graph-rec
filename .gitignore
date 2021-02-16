@@ -1,2 +1,3 @@
-.ipynb_checkpoints/
-pinsage/
+.ipynb_checkpoints
+data/
+__pycache__
