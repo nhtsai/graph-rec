@@ -1,7 +1,15 @@
 {
-	"test_size": 0.30,
-	"model_name": "PinSage",
-	"n_random_walks": 10,
-	"n_neighbors": 2,
-	"n_hidden": 16
+	"random_walk_length": 2,
+	"random_walk_restart_prob": 0.5,
+	"num_random_walks": 10,
+	"num_neighbors": 3,
+	"num_layers": 2,
+	"hidden_dims": 16,
+	"batch-size": 32,
+	"device": "cpu",
+	"num_epochs": 1,
+	"batches_per_epoch": 20000,
+	"num_workers": 0,
+	"lr": 3e-5,
+	"k": 10
 }
