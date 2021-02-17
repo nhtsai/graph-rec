@@ -6,6 +6,13 @@ Project Website: https://nhtsai.github.io/graph-rec/
 ## Project
 Amazon Product Recommendation using a graph-based neural network approach.
 
+### Requirements
+- dask
+- pandas
+- torch
+- torchtext
+- dgl
+
 ## Data
 Amazon Product Dataset from Professor Julian McAuley ([link](http://jmcauley.ucsd.edu/data/amazon/links.html))
 * Books Product Metadata ([link](http://snap.stanford.edu/data/amazon/productGraph/categoryFiles/meta_Books.json.gz), 788M)
