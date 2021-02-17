@@ -18,12 +18,16 @@ Amazon Product Dataset from Professor Julian McAuley ([link](http://jmcauley.ucs
 * Books Product Metadata ([link](http://snap.stanford.edu/data/amazon/productGraph/categoryFiles/meta_Books.json.gz), 788M)
 * Books Product Image Features ([link](http://snap.stanford.edu/data/amazon/productGraph/image_features/categoryFiles/image_features_Books.b), 35G)
 
-## Model
-* Image features (product image)
-* Product/Text features (title, price, category, brand, etc.)
+## Features
+* Visual features (product image embedding)
+* Product features (`price`)
+* Text features (`title`, `description`)
 * Graph features
-  * Nodes: products
-  * Edges: also bought, also viewed, bought together
+  * Nodes: products `ASIN`
+  * Edges: `also bought`, `also viewed`, `bought together`
+
+## Model
+* Unsupervised PinSage model implementation adapted from [DGL Example](https://github.com/dmlc/dgl/tree/master/examples/pytorch/pinsage)
 
 ## References
 * [GraphSAGE](http://snap.stanford.edu/graphsage/)
