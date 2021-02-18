@@ -1,4 +1,6 @@
 .ipynb_checkpoints
-data/
+/data/*
+!/data/*.json.gz
+!/data/*.b
 __pycache__
 .vscode
