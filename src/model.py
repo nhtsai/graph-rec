@@ -15,7 +15,7 @@ import evaluation
 class PinSAGEModel(nn.Module):
     """Wrapper class for the PinSAGE model."""
     def __init__(self, full_graph, ntype, textsets, hidden_dims, n_layers):
-        """Constructs PinSAGEModel object.
+        """Constructor of PinSAGE model class.
         
         Args:
             full_graph:
@@ -53,10 +53,10 @@ class PinSAGEModel(nn.Module):
 
 def train(dataset, args):
     """Creates and trains a PinSAGE model.
-    
+
     Args:
-        dataset:
-        args:
+        dataset (dict):
+        args ():
     """
     g = dataset['train-graph'] # training graph
     val_matrix = dataset['val-matrix'].tocsr() # compressed sparse row validation matrix
@@ -89,18 +89,22 @@ def train(dataset, args):
         field.build_vocab(getattr(textset, key))
         #field.build_vocab(getattr(textset, key), vectors='fasttext.simple.300d')
 
-    # Sampler
+    # Batch Sampler
     batch_sampler = sampler_module.ItemToItemBatchSampler(
         g, user_ntype, item_ntype, args.batch_size)
+    # Neighbor Sampler
     neighbor_sampler = sampler_module.NeighborSampler(
         g, user_ntype, item_ntype, args.random_walk_length,
         args.random_walk_restart_prob, args.num_random_walks, args.num_neighbors,
         args.num_layers)
+    # Collator
     collator = sampler_module.PinSAGECollator(neighbor_sampler, g, item_ntype, textset)
+    # Train Data Loader
     dataloader = DataLoader(
         batch_sampler,
         collate_fn=collator.collate_train,
         num_workers=args.num_workers)
+    # Test Data Loader
     dataloader_test = DataLoader(
         torch.arange(g.number_of_nodes(item_ntype)),
         batch_size=args.batch_size,
@@ -110,23 +114,31 @@ def train(dataset, args):
 
     # Model
     model = PinSAGEModel(g, item_ntype, textset, args.hidden_dims, args.num_layers).to(device)
+
     # Optimizer
     opt = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     # For each batch of head-tail-negative triplets...
     for epoch_id in range(args.num_epochs):
-        model.train()
+        model.train() # set model to training mode
         for batch_id in tqdm.trange(args.batches_per_epoch):
             pos_graph, neg_graph, blocks = next(dataloader_it)
+
             # Copy to GPU
             for i in range(len(blocks)):
                 blocks[i] = blocks[i].to(device)
             pos_graph = pos_graph.to(device)
             neg_graph = neg_graph.to(device)
 
+            # Calculate loss
             loss = model(pos_graph, neg_graph, blocks).mean()
+
+            # Zero optimizer gradients
             opt.zero_grad()
+
+            # Backpropagate loss
             loss.backward()
+            # Adjust optimizer weights
             opt.step()
 
         # Evaluate

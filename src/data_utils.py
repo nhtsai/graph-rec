@@ -6,29 +6,73 @@ import tqdm
 import dask.dataframe as dd
 
 # This is the train-test split method most of the recommender system papers running on MovieLens
-# takes.  It essentially follows the intuition of "training on the past and predict the future".
+# takes. It essentially follows the intuition of "training on the past and predict the future".
 # One can also change the threshold to make validation and test set take larger proportions.
 def train_test_split_by_time(df, timestamp, user):
+    """Creates train-test splits of dataset by training on past to predict the future.
+
+    Args:
+        df (pd.DataFrame): 
+        timestamp ():
+        user ():
+
+    Returns:
+    """
+
+    # Create masks for train, validation, and test sets
     df['train_mask'] = np.ones((len(df),), dtype=np.bool)
     df['val_mask'] = np.zeros((len(df),), dtype=np.bool)
     df['test_mask'] = np.zeros((len(df),), dtype=np.bool)
+    
+    # Split dataframe into dask dataframe partitions
     df = dd.from_pandas(df, npartitions=10)
+
     def train_test_split(df):
+        """TODO: Sorts dataset by timestamp and 
+
+        Args:
+            df (pd.DataFrame):
+
+        Returns:
+
+        """
         df = df.sort_values([timestamp])
+        # more than 1 row
         if df.shape[0] > 1:
             df.iloc[-1, -3] = False
             df.iloc[-1, -1] = True
+        # more than 2 rows
         if df.shape[0] > 2:
             df.iloc[-2, -3] = False
             df.iloc[-2, -2] = True
         return df
-    df = df.groupby(user, group_keys=False).apply(train_test_split).compute(scheduler='processes').sort_index()
+
+    df = df.groupby(user, group_keys=False) \
+           .apply(train_test_split) \
+           .compute(scheduler='processes') \
+           .sort_index()
+
     print(df[df[user] == df[user].unique()[0]].sort_values(timestamp))
+
+
     return df['train_mask'].to_numpy().nonzero()[0], \
            df['val_mask'].to_numpy().nonzero()[0], \
            df['test_mask'].to_numpy().nonzero()[0]
 
 def build_train_graph(g, train_indices, utype, itype, etype, etype_rev):
+    """
+
+    Args:
+        g ():
+        train_indices ():
+        utype ():
+        itype ():
+        etype ():
+        etype_rev ():
+
+    Returns:
+
+    """
     train_g = g.edge_subgraph(
         {etype: train_indices, etype_rev: train_indices},
         preserve_nodes=True)
@@ -47,6 +91,19 @@ def build_train_graph(g, train_indices, utype, itype, etype, etype_rev):
     return train_g
 
 def build_val_test_matrix(g, val_indices, test_indices, utype, itype, etype):
+    """
+
+    Args:
+        g ():
+        val_indices ():
+        test_indices ():
+        utype ():
+        itype ():
+        etype ():
+
+    Returns:
+        A validation matrix and a test matrix.
+    """
     n_users = g.number_of_nodes(utype)
     n_items = g.number_of_nodes(itype)
     val_src, val_dst = g.find_edges(val_indices, etype=etype)
@@ -61,5 +118,6 @@ def build_val_test_matrix(g, val_indices, test_indices, utype, itype, etype):
     return val_matrix, test_matrix
 
 def linear_normalize(values):
+    """Helper function for min-max linear normalization."""
     return (values - values.min(0, keepdims=True)) / \
         (values.max(0, keepdims=True) - values.min(0, keepdims=True))

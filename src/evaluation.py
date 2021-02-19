@@ -5,6 +5,14 @@ import dgl
 import argparse
 
 def prec(recommendations, ground_truth):
+    """TODO
+
+    Args:
+        recommendations ():
+        ground_truth ():
+    
+    Returns:
+    """
     n_users, n_items = ground_truth.shape
     K = recommendations.shape[1]
     user_idx = np.repeat(np.arange(n_users), K)
@@ -14,7 +22,16 @@ def prec(recommendations, ground_truth):
     return hit
 
 class LatestNNRecommender(object):
+    """class docstring for LatestNNRecommender."""
     def __init__(self, user_ntype, item_ntype, user_to_item_etype, timestamp, batch_size):
+        """Constructor of LatestNNRecommender class.
+
+        user_ntype ():
+        item_ntype ():
+        user_to_item_etype ():
+        timestamp ():
+        batch_size ():
+        """
         self.user_ntype = user_ntype
         self.item_ntype = item_ntype
         self.user_to_item_etype = user_to_item_etype
@@ -23,7 +40,15 @@ class LatestNNRecommender(object):
 
     def recommend(self, full_graph, K, h_user, h_item):
         """
-        Return a (n_user, K) matrix of recommended items for each user
+
+        Args:
+            full_graph (dgl.DGLGraph):
+            K (): number of items to recommend.
+            h_user ():
+            h_item ():
+
+        Returns:
+            Returns an (n_user, K) matrix of recommended items for each user.
         """
         graph_slice = full_graph.edge_type_subgraph([self.user_to_item_etype])
         n_users = full_graph.number_of_nodes(self.user_ntype)
@@ -48,6 +73,14 @@ class LatestNNRecommender(object):
 
 
 def evaluate_nn(dataset, h_item, k, batch_size):
+    """
+
+    Args:
+        dataset ():
+        h_item ():
+        k ():
+        batch_size ():
+    """
     g = dataset['train-graph']
     val_matrix = dataset['val-matrix'].tocsr()
     test_matrix = dataset['test-matrix'].tocsr()

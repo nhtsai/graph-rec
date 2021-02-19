@@ -2,32 +2,49 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import dgl
-import dgl.nn.pytorch as dglnn
+# import dgl.nn.pytorch as dglnn
 import dgl.function as fn
 
 def disable_grad(module):
+    """Disables gradient to freeze module parameters."""
     for param in module.parameters():
         param.requires_grad = False
 
 def _init_input_modules(g, ntype, textset, hidden_dims):
+    """Initializes input modules
+
+    Args:
+        g ():
+        ntype (): node type
+        textset ():
+        hidden_dims ():
+
+    Returns:
+    """
     # We initialize the linear projections of each input feature ``x`` as
     # follows:
-    # * If ``x`` is a scalar integral feature, we assume that ``x`` is a categorical
+    # * If ``x`` is a scalar integral (integer) feature, we assume that ``x`` is a categorical
     #   feature, and assume the range of ``x`` is 0..max(x).
     # * If ``x`` is a float one-dimensional feature, we assume that ``x`` is a
     #   numeric vector.
     # * If ``x`` is a field of a textset, we process it as bag of words.
+
+    # get submodules in a dictionary
     module_dict = nn.ModuleDict()
 
     for column, data in g.nodes[ntype].data.items():
         if column == dgl.NID:
             continue
+
+        # data is of type float
         if data.dtype == torch.float32:
             assert data.ndim == 2
             m = nn.Linear(data.shape[1], hidden_dims)
             nn.init.xavier_uniform_(m.weight)
             nn.init.constant_(m.bias, 0)
             module_dict[column] = m
+
+        # data is of type int
         elif data.dtype == torch.int64:
             assert data.ndim == 1
             m = nn.Embedding(
@@ -35,6 +52,7 @@ def _init_input_modules(g, ntype, textset, hidden_dims):
             nn.init.xavier_uniform_(m.weight)
             module_dict[column] = m
 
+    # data is textual
     if textset is not None:
         for column, field in textset.fields.items():
             if field.vocab.vectors:
@@ -45,6 +63,7 @@ def _init_input_modules(g, ntype, textset, hidden_dims):
     return module_dict
 
 class BagOfWordsPretrained(nn.Module):
+    """Pretrained Bag of Words model."""
     def __init__(self, field, hidden_dims):
         super().__init__()
 
@@ -60,14 +79,17 @@ class BagOfWordsPretrained(nn.Module):
         disable_grad(self.emb)
 
     def forward(self, x, length):
-        """
-        x: (batch_size, max_length) LongTensor
-        length: (batch_size,) LongTensor
+        """Forward propagation of Pretrained Bag of Words layer.
+
+        Args:
+            x (torch.LongTensor): tensor of size (batch_size, max_length)
+            length (torch.LongTensor): tensor of size (batch_size,)
         """
         x = self.emb(x).sum(1) / length.unsqueeze(1).float()
         return self.proj(x)
 
 class BagOfWords(nn.Module):
+    """Bag of Words model."""
     def __init__(self, field, hidden_dims):
         super().__init__()
 
@@ -77,12 +99,12 @@ class BagOfWords(nn.Module):
         nn.init.xavier_uniform_(self.emb.weight)
 
     def forward(self, x, length):
+        """Forward propagation of BagOfWords layer."""
         return self.emb(x).sum(1) / length.unsqueeze(1).float()
 
 class LinearProjector(nn.Module):
-    """
-    Projects each input feature of the graph linearly and sums them up
-    """
+    """Projects each input feature of the graph linearly and sums them up."""
+
     def __init__(self, full_graph, ntype, textset, hidden_dims):
         super().__init__()
 
@@ -90,6 +112,13 @@ class LinearProjector(nn.Module):
         self.inputs = _init_input_modules(full_graph, ntype, textset, hidden_dims)
 
     def forward(self, ndata):
+        """Forward propagation of LinearProjector layer.
+
+        Args:
+            ndata ():
+
+        Returns:
+        """
         projections = []
         for feature, data in ndata.items():
             if feature == dgl.NID or feature.endswith('__len'):
@@ -119,6 +148,7 @@ class WeightedSAGEConv(nn.Module):
         self.dropout = nn.Dropout(0.5)
 
     def reset_parameters(self):
+        """Re-initialize weight parameters of WeightedSAGEConv layer."""
         gain = nn.init.calculate_gain('relu')
         nn.init.xavier_uniform_(self.Q.weight, gain=gain)
         nn.init.xavier_uniform_(self.W.weight, gain=gain)
@@ -126,10 +156,12 @@ class WeightedSAGEConv(nn.Module):
         nn.init.constant_(self.W.bias, 0)
 
     def forward(self, g, h, weights):
-        """
-        g : graph
-        h : node features
-        weights : scalar edge weights
+        """Forward propgation of Weighted SAGE convolution layer.
+
+        Args:
+            g (): graph
+            h (): node features
+            weights (): scalar edge weights
         """
         h_src, h_dst = h
         with g.local_scope():
@@ -147,12 +179,18 @@ class WeightedSAGEConv(nn.Module):
 
 class SAGENet(nn.Module):
     def __init__(self, hidden_dims, n_layers):
-        """
-        g : DGLHeteroGraph
-            The user-item interaction graph.
-            This is only for finding the range of categorical variables.
-        item_textsets : torchtext.data.Dataset
-            The textual features of each item node.
+        """Constructor method of SAGENet layer.
+
+        Args:
+            hidden_dims:
+            n_layers:
+
+        TODO: where does this go?
+            g: DGLHeteroGraph
+                The user-item interaction graph.
+                This is only for finding the range of categorical variables.
+            item_textsets: torchtext.data.Dataset
+                The textual features of each item node.
         """
         super().__init__()
 
@@ -161,6 +199,14 @@ class SAGENet(nn.Module):
             self.convs.append(WeightedSAGEConv(hidden_dims, hidden_dims, hidden_dims))
 
     def forward(self, blocks, h):
+        """Forward propagation of SAGENet layer.
+
+        Args:
+            blocks ():
+            h ():
+
+        Returns:
+        """
         for layer, block in zip(self.convs, blocks):
             h_dst = h[:block.number_of_nodes('DST/' + block.ntypes[0])]
             h = layer(block, (h, h_dst), block.edata['weights'])
@@ -179,9 +225,11 @@ class ItemToItemScorer(nn.Module):
         return {'s': edges.data['s'] + bias_src + bias_dst}
 
     def forward(self, item_item_graph, h):
-        """
-        item_item_graph : graph consists of edges connecting the pairs
-        h : hidden state of every node
+        """Forward propagation of ItemtoItemScorer layer.
+
+        Args:
+            item_item_graph (): graph consists of edges connecting the pairs
+            h (): hidden state of every node
         """
         with item_item_graph.local_scope():
             item_item_graph.ndata['h'] = h

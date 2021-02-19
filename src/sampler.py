@@ -12,7 +12,16 @@ def compact_and_copy(frontier, seeds):
     return block
 
 class ItemToItemBatchSampler(IterableDataset):
+    """TODO: ItemToItemBatchSampler Class docstring"""
     def __init__(self, g, user_type, item_type, batch_size):
+        """Constructor for ItemToItemBatchSampler class.
+
+        Args:
+            g ():
+            user_type ():
+            item_type ():
+            batch_size ():
+        """
         self.g = g
         self.user_type = user_type
         self.item_type = item_type
@@ -35,17 +44,41 @@ class ItemToItemBatchSampler(IterableDataset):
 class NeighborSampler(object):
     def __init__(self, g, user_type, item_type, random_walk_length, random_walk_restart_prob,
                  num_random_walks, num_neighbors, num_layers):
+        """Constructor for NeighborSampler class.
+
+        Args:
+            g ():
+            user_type ():
+            item_type ():
+            random_walk_length (int):
+            random_walk_restart_prob (int):
+            num_random_walks (int):
+            num_neighbors (int):
+            num_layers (int):
+        """
         self.g = g
         self.user_type = user_type
         self.item_type = item_type
         self.user_to_item_etype = list(g.metagraph()[user_type][item_type])[0]
         self.item_to_user_etype = list(g.metagraph()[item_type][user_type])[0]
+
+        # Create a PinSAGESampler for each layer.
         self.samplers = [
             dgl.sampling.PinSAGESampler(g, item_type, user_type, random_walk_length,
                 random_walk_restart_prob, num_random_walks, num_neighbors)
             for _ in range(num_layers)]
 
     def sample_blocks(self, seeds, heads=None, tails=None, neg_tails=None):
+        """
+
+        Args:
+            seeds ():
+            heads (): Optional;
+            tails (): Optional;
+            neg_tails (): Optional;
+        
+        Returns:
+        """
         blocks = []
         for sampler in self.samplers:
             frontier = sampler(seeds)
@@ -64,8 +97,15 @@ class NeighborSampler(object):
         return blocks
 
     def sample_from_item_pairs(self, heads, tails, neg_tails):
-        # Create a graph with positive connections only and another graph with negative
-        # connections only.
+        """Create a graph with positive connections only and another graph with negative connections only.
+
+        Args:
+            heads ():
+            tails ():
+            neg_tails ():
+
+        Returns:
+        """
         pos_graph = dgl.graph(
             (heads, tails),
             num_nodes=self.g.number_of_nodes(self.item_type))
@@ -79,8 +119,13 @@ class NeighborSampler(object):
         return pos_graph, neg_graph, blocks
 
 def assign_simple_node_features(ndata, g, ntype, assign_id=False):
-    """
-    Copies data to the given block from the corresponding nodes in the original graph.
+    """Copies data to the given block from the corresponding nodes in the original graph.
+
+    Args:
+        ndata ():
+        g ():
+        ntype ():
+        assign_id (bool): Optional;
     """
     for col in g.nodes[ntype].data.keys():
         if not assign_id and col == dgl.NID:
@@ -98,16 +143,16 @@ def assign_textual_node_features(ndata, textset, ntype):
     The length would be stored as another node feature with name
     ``field_name + '__len'``.
 
-    block : DGLHeteroGraph
-        First element of the compacted blocks, with "dgl.NID" as the
-        corresponding node ID in the original graph, hence the index to the
-        text dataset.
+    Args:
+        block (DGLHeteroGraph):
+            First element of the compacted blocks, with "dgl.NID" as the
+            corresponding node ID in the original graph, hence the index to the
+            text dataset.
 
-        The numericalized tokens (and lengths if available) would be stored
-        onto the blocks as new node features.
-    textset : torchtext.data.Dataset
-        A torchtext dataset whose number of examples is the same as that
-        of nodes in the original graph.
+            The numericalized tokens (and lengths if available) would be stored
+            onto the blocks as new node features.
+        textset (torchtext.data.Dataset): A torchtext dataset whose number 
+            of examples is the same as that of nodes in the original graph.
     """
     node_ids = ndata[dgl.NID].numpy()
 
@@ -123,21 +168,44 @@ def assign_textual_node_features(ndata, textset, ntype):
         ndata[field_name + '__len'] = lengths
 
 def assign_features_to_blocks(blocks, g, textset, ntype):
-    # For the first block (which is closest to the input), copy the features from
-    # the original graph as well as the texts.
+    """For the first block (which is closest to the input), 
+    copy the features from the original graph as well as the texts.
+
+    Args:
+        blocks ():
+        g ():
+        textset ():
+        ntype ():
+    """
     assign_simple_node_features(blocks[0].srcdata, g, ntype)
     assign_textual_node_features(blocks[0].srcdata, textset, ntype)
     assign_simple_node_features(blocks[-1].dstdata, g, ntype)
     assign_textual_node_features(blocks[-1].dstdata, textset, ntype)
 
 class PinSAGECollator(object):
+    """TODO: docstring for PinSAGECollator class."""
     def __init__(self, sampler, g, ntype, textset):
+        """Constructor for PinSAGECollator class.
+
+        Args:
+            sampler ():
+            g ():
+            ntype ():
+            textset ():
+        """
         self.sampler = sampler
         self.ntype = ntype
         self.g = g
         self.textset = textset
 
     def collate_train(self, batches):
+        """TODO
+
+        Args:
+            batches ():
+        
+        Returns:
+        """
         heads, tails, neg_tails = batches[0]
         # Construct multilayer neighborhood via PinSAGE...
         pos_graph, neg_graph, blocks = self.sampler.sample_from_item_pairs(heads, tails, neg_tails)
@@ -146,6 +214,14 @@ class PinSAGECollator(object):
         return pos_graph, neg_graph, blocks
 
     def collate_test(self, samples):
+        """TODO
+
+        Args:
+            samples ():
+
+        Returns:
+            
+        """
         batch = torch.LongTensor(samples)
         blocks = self.sampler.sample_blocks(batch)
         assign_features_to_blocks(blocks, self.g, self.textset, self.ntype)
