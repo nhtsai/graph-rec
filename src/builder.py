@@ -65,22 +65,22 @@ class PandasGraphBuilder(object):
         self.entity_tables = {}
         self.relation_tables = {}
 
-        self.entity_pk_to_name = {}     # mapping from primary key name to entity name
-        self.entity_pk = {}             # mapping from entity name to primary key
-        self.entity_key_map = {}        # mapping from entity names to primary key values
+        self.entity_pk_to_name = {}      # mapping from primary key name to entity name
+        self.entity_pk = {}              # mapping from entity name to primary key
+        self.entity_key_map = {}         # mapping from entity names to primary key values
         self.num_nodes_per_type = {}
         self.edges_per_relation = {}
         self.relation_name_to_etype = {}
-        self.relation_src_key = {}      # mapping from relation name to source key
-        self.relation_dst_key = {}      # mapping from relation name to destination key
+        self.relation_src_key = {}       # mapping from relation name to source key
+        self.relation_dst_key = {}       # mapping from relation name to destination key
 
     def add_entities(self, entity_table, primary_key, name):
         """Adds entities as specified by an entity table.
 
         Args:
-            entity_table (pd.DataFrame):
-            primary_key (str):
-            name (str):
+            entity_table (pd.DataFrame): dataframe with entity data
+            primary_key (str): column name of unique entity id's
+            name (str): name of the entity
         """
         entities = entity_table[primary_key].astype('category')
         if not (entities.value_counts() == 1).all():
@@ -95,13 +95,13 @@ class PandasGraphBuilder(object):
         self.entity_tables[name] = entity_table
 
     def add_binary_relations(self, relation_table, source_key, destination_key, name):
-        """Adds directed edges from source to destination keys as specified by a relation table.
+        """Adds directed edges from source to destination entities as specified by a relation table.
 
         Args:
-            relation_table (pd.DataFrame):
-            source_key (str):
-            destination_key (str):
-            name (str):
+            relation_table (pd.DataFrame): dataframe with source and destination entity data
+            source_key (str): column name of the source entities
+            destination_key (str): column name of the destination entities
+            name (str): name of the binary relation
         """
         src = relation_table[source_key].astype('category')
         src = src.cat.set_categories(
