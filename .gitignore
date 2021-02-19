@@ -1,6 +1,9 @@
+# hidden/unnecessary files
 .ipynb_checkpoints
-/data/*
-!/data/*.json.gz
-!/data/*.b
 __pycache__
 .vscode
+
+# only capturing symlinks to datasets
+/data/*
+!/data/*.json.gz
+!/data/*.b 
