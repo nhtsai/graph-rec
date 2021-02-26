@@ -18,11 +18,11 @@ class PinSAGEModel(nn.Module):
         """Constructor of PinSAGE model class.
         
         Args:
-            full_graph:
-            ntype:
-            textsets:
-            hidden_dims:
-            n_layers:
+            full_graph (dgl.DGLGraph): bipartite user-item graph
+            ntype (str): item node name
+            textsets (torchtext.data.Dataset): text features
+            hidden_dims (int): dimension of hidden layer
+            n_layers (int): number of hidden layers
         """
         super().__init__()
 
@@ -34,12 +34,12 @@ class PinSAGEModel(nn.Module):
         """Forward propogation of PinSAGE model.
         
         Args:
-            pos_graph:
-            neg_graph:
-            blocks:
+            pos_graph (dgl.DGLGraph): positive-connected graph
+            neg_graph (dgl.DGLGraph): negative-connected graph
+            blocks (list[dgl.DGLBlock]): sample neighborhood graphs for each layer
             
         Returns:
-            
+           A torch.Tensor of the nonnegative values of (negative scores - positive scores + 1).
         """
         h_item = self.get_repr(blocks)
         pos_score = self.scorer(pos_graph, h_item)
@@ -47,25 +47,26 @@ class PinSAGEModel(nn.Module):
         return (neg_score - pos_score + 1).clamp(min=0)
 
     def get_repr(self, blocks):
+        """TODO: Returns representation of ???"""
         h_item = self.proj(blocks[0].srcdata)
         h_item_dst = self.proj(blocks[-1].dstdata)
         return h_item_dst + self.sage(blocks, h_item)
 
 def train(dataset, args):
-    """Creates and trains a PinSAGE model.
+    """Creates and trains a PinSAGE model using Adam optimizer.
 
     Args:
-        dataset (dict):
-        args ():
+        dataset (dict): dictionary of preprocessed dataset features and information
+        args (argparse.ArgumentParser): model and data configuration arguments
     """
     g = dataset['train-graph'] # training graph
     val_matrix = dataset['val-matrix'].tocsr() # compressed sparse row validation matrix
     test_matrix = dataset['test-matrix'].tocsr() # compressed sparse row test matrix
-    item_texts = dataset['item-texts'] # item text
-    user_ntype = dataset['user-type']
-    item_ntype = dataset['item-type']
-    user_to_item_etype = dataset['user-to-item-type']
-    timestamp = dataset['timestamp-edge-column']
+    item_texts = dataset['item-texts'] # item text features
+    user_ntype = dataset['user-type'] # user node
+    item_ntype = dataset['item-type'] # item node
+    user_to_item_etype = dataset['user-to-item-type'] # user-item directed edge
+    timestamp = dataset['timestamp-edge-column'] # timestamp column
 
     device = torch.device(args.device)
 
@@ -87,23 +88,27 @@ def train(dataset, args):
     textset = torchtext.data.Dataset(examples, fields)
     for key, field in fields.items():
         field.build_vocab(getattr(textset, key))
-        #field.build_vocab(getattr(textset, key), vectors='fasttext.simple.300d')
+        #field.build_vocab(getattr(textset, key), vectors='fasttext.simple.300d') # use fasttext
 
     # Batch Sampler
     batch_sampler = sampler_module.ItemToItemBatchSampler(
         g, user_ntype, item_ntype, args.batch_size)
+
     # Neighbor Sampler
     neighbor_sampler = sampler_module.NeighborSampler(
         g, user_ntype, item_ntype, args.random_walk_length,
         args.random_walk_restart_prob, args.num_random_walks, args.num_neighbors,
         args.num_layers)
+
     # Collator
     collator = sampler_module.PinSAGECollator(neighbor_sampler, g, item_ntype, textset)
+
     # Train Data Loader
     dataloader = DataLoader(
         batch_sampler,
         collate_fn=collator.collate_train,
         num_workers=args.num_workers)
+
     # Test Data Loader
     dataloader_test = DataLoader(
         torch.arange(g.number_of_nodes(item_ntype)),
@@ -120,7 +125,9 @@ def train(dataset, args):
 
     # For each batch of head-tail-negative triplets...
     for epoch_id in range(args.num_epochs):
-        model.train() # set model to training mode
+        
+        # Train
+        model.train()
         for batch_id in tqdm.trange(args.batches_per_epoch):
             pos_graph, neg_graph, blocks = next(dataloader_it)
 
@@ -131,17 +138,18 @@ def train(dataset, args):
             neg_graph = neg_graph.to(device)
 
             # Calculate loss
-            loss = model(pos_graph, neg_graph, blocks).mean()
+            loss = model(pos_graph, neg_graph, blocks).mean() # mean
 
             # Zero optimizer gradients
             opt.zero_grad()
 
             # Backpropagate loss
             loss.backward()
+
             # Adjust optimizer weights
             opt.step()
 
-        # Evaluate
+        # Evaluate validation set
         model.eval()
         with torch.no_grad():
             item_batches = torch.arange(g.number_of_nodes(item_ntype)).split(args.batch_size)
@@ -149,12 +157,23 @@ def train(dataset, args):
             for blocks in dataloader_test:
                 for i in range(len(blocks)):
                     blocks[i] = blocks[i].to(device)
-
                 h_item_batches.append(model.get_repr(blocks))
-            h_item = torch.cat(h_item_batches, 0)
-
+            h_item = torch.cat(h_item_batches, 0) # item node embeddings
             print(evaluation.evaluate_nn(dataset, h_item, args.k, args.batch_size))
+    return model
 
+def test(dataset, args):
+    model.eval()
+    with torch.no_grad()
+        item_batches = torch.arange(g.number_of_nodes(item_ntype)).split(args.batch_size)
+        h_item_batches = []
+        for blocks in dataloader_test:
+            for i in range(len(blocks)):
+                blocks[i] = blocks[i].to(device)
+            h_item_batches.append(model.get_repr(blocks))
+        h_item = torch.cat(h_item_batches, 0) # item node embeddings
+        print(evaluation.evaluate_nn(dataset, h_item, args.k, args.batch_size))
+            
 if __name__ == '__main__':
     # Arguments
     parser = argparse.ArgumentParser()

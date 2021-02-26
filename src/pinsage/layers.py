@@ -14,9 +14,9 @@ def _init_input_modules(g, ntype, textset, hidden_dims):
     """Initializes input modules
 
     Args:
-        g ():
+        g (dgl.DGLGraph):
         ntype (): node type
-        textset ():
+        textset (torchtext.data.Dataset):
         hidden_dims ():
 
     Returns:
