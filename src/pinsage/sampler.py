@@ -1,4 +1,4 @@
-import numpy as np
+# import numpy as np
 import dgl
 import torch
 from torch.utils.data import IterableDataset, DataLoader
@@ -8,7 +8,7 @@ def compact_and_copy(frontier, seeds):
     Args:
         frontier (dgl.DGLGraph): a graph made from sampled neighbors using PinSAGE Sampler
         seeds (torch.Tensor): seed node IDs used to generate neighbors
-        
+
     Returns:
         A dgl.DGLBlock bipartite structured frontier graph with destination seed nodes.
     """
@@ -38,7 +38,10 @@ class ItemToItemBatchSampler(IterableDataset):
         self.batch_size = batch_size
 
     def __iter__(self):
-        """Iterator that yields batch-sized torch.Tensors of head nodes, tail nodes, and negative tail nodes."""
+        """
+        Iterator that yields batch-sized torch.Tensors of 
+        head nodes, tail nodes, and negative tail nodes.
+        """
         while True:
             # list of head nodes chosen at random
             heads = torch.randint(0, self.g.number_of_nodes(self.item_type), (self.batch_size,))
@@ -66,7 +69,8 @@ class NeighborSampler(object):
             random_walk_length (int): the maximum number traversals for a single random walk
             random_walk_restart_prob (int): termination probability after each traversal
             num_random_walks (int): number of random walks to try for each given node
-            num_neighbors (int): number of neighbors (or most commonly visited nodes) to select for each given node
+            num_neighbors (int): number of neighbors (or most commonly visited nodes)
+                                 to select for each given node
             num_layers (int): number of sampling layers
         """
         self.g = g
@@ -78,7 +82,7 @@ class NeighborSampler(object):
         # Create a PinSAGESampler for each layer.
         self.samplers = [
             dgl.sampling.PinSAGESampler(g, item_type, user_type, random_walk_length,
-                random_walk_restart_prob, num_random_walks, num_neighbors)
+                                        random_walk_restart_prob, num_random_walks, num_neighbors)
             for _ in range(num_layers)]
 
     def sample_blocks(self, seeds, heads=None, tails=None, neg_tails=None):
@@ -89,9 +93,10 @@ class NeighborSampler(object):
             heads (torch.Tensor): Optional; head node IDs
             tails (torch.Tensor): Optional; tail node IDs
             neg_tails (torch.Tensor): Optional; negative tail node IDs
-        
+
         Returns:
-            A list of dgl.DGLBlock bipartitie graphs of the neighbors to seed nodes sampled in all layers.
+            A list of dgl.DGLBlock bipartitie graphs of the neighbors
+            to seed nodes sampled in all layers.
         """
         blocks = []
         for sampler in self.samplers:
@@ -102,7 +107,10 @@ class NeighborSampler(object):
             # if head nodes are provided, remove head-tail and head-neg_tail edges
             if heads is not None:
                 # find edge IDs of head-tail and head-neg_tail edges
-                eids = frontier.edge_ids(torch.cat([heads, heads]), torch.cat([tails, neg_tails]), return_uv=True)[2]
+                eids = frontier.edge_ids(
+                        torch.cat([heads, heads]), torch.cat([tails, neg_tails]),
+                        return_uv=True
+                    )[2]
                 if len(eids) > 0:
                     old_frontier = frontier
                     frontier = dgl.remove_edges(old_frontier, eids)
@@ -110,7 +118,7 @@ class NeighborSampler(object):
                     #print(frontier)
                     #print(frontier.edata['weights'])
                     #frontier.edata['weights'] = old_frontier.edata['weights'][frontier.edata[dgl.EID]]
-            
+
             # Create dgl.DGLBlock object
             block = compact_and_copy(frontier, seeds)
             seeds = block.srcdata[dgl.NID]
@@ -118,7 +126,7 @@ class NeighborSampler(object):
         return blocks
 
     def sample_from_item_pairs(self, heads, tails, neg_tails):
-        """Create a graph with positive connections only and another graph with negative connections only.
+        """Create a graphs with positive connections and negative connections.
 
         Args:
             heads (torch.Tensor): head node IDs
@@ -126,7 +134,7 @@ class NeighborSampler(object):
             neg_tails (torch.Tensor): negative tail node IDs
 
         Returns:
-            A positive-connected graph, a negative connected graph, 
+            A positive-connected graph, a negative connected graph,
             and blocks of sampled neighbors using positive graph seed nodes.
         """
         pos_graph = dgl.graph(
@@ -135,13 +143,13 @@ class NeighborSampler(object):
         neg_graph = dgl.graph(
             (heads, neg_tails),
             num_nodes=self.g.number_of_nodes(self.item_type))
-        
+
         # find and remove the common isolated nodes across both graphs
         pos_graph, neg_graph = dgl.compact_graphs([pos_graph, neg_graph])
-        
+
         # get seed node IDs from positive graph
         seeds = pos_graph.ndata[dgl.NID]
-        
+
         # create sampled neighbor block graphs
         blocks = self.sample_blocks(seeds, heads, tails, neg_tails)
         return pos_graph, neg_graph, blocks
@@ -150,7 +158,7 @@ def assign_simple_node_features(ndata, g, ntype, assign_id=False):
     """Copies data to the given block from the corresponding nodes in the original graph.
 
     Args:
-        ndata (dict[str, Tensor]): node data from dgl.DGLBlock sampled neighbor graph 
+        ndata (dict[str, Tensor]): node data from dgl.DGLBlock sampled neighbor graph
         g (dgl.DGLGraph): bipartite user-item graph
         ntype (str): node name
         assign_id (bool): Optional; whether to assign node ID
@@ -179,7 +187,7 @@ def assign_textual_node_features(ndata, textset, ntype):
 
             The numericalized tokens (and lengths if available) would be stored
             onto the blocks as new node features.
-        textset (torchtext.data.Dataset): A torchtext dataset whose number 
+        textset (torchtext.data.Dataset): A torchtext dataset whose number
             of examples is the same as that of nodes in the original graph.
     """
     node_ids = ndata[dgl.NID].numpy()
@@ -196,7 +204,7 @@ def assign_textual_node_features(ndata, textset, ntype):
         ndata[field_name + '__len'] = lengths
 
 def assign_features_to_blocks(blocks, g, textset, ntype):
-    """For the first block (which is closest to the input), 
+    """For the first block (which is closest to the input),
     copy the features from the original graph as well as the texts.
 
     Args:
@@ -230,12 +238,12 @@ class PinSAGECollator(object):
         """Collates training input samples into batches.
 
         Args:
-            batches (tuple of torch.Tensors): head, tail, and negative tail node IDs 
+            batches (tuple of torch.Tensors): head, tail, and negative tail node IDs
                                               generated from ItemToItemBatchSampler.
-        
+
         Returns:
-            A dgl.DGLGraph made from positive edges, 
-            a dgl.DGLGraph made from negative edges, and 
+            A dgl.DGLGraph made from positive edges,
+            a dgl.DGLGraph made from negative edges, and
             a list of dgl.DGLBlock graphs made from sampled neighbors to seed node edges.
         """
         heads, tails, neg_tails = batches[0]
@@ -252,7 +260,8 @@ class PinSAGECollator(object):
             samples (list of int): a list of sampled node IDs
 
         Returns:
-            A list of dgl.DGLBlock graphs created from given sampled node IDs, with node and text features.
+            A list of dgl.DGLBlock graphs created from
+            given sampled node IDs, with node and text features.
         """
         # get test seeds
         batch = torch.LongTensor(samples)

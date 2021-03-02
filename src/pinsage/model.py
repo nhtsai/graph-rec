@@ -16,7 +16,7 @@ class PinSAGEModel(nn.Module):
     """Wrapper class for the PinSAGE model."""
     def __init__(self, full_graph, ntype, textsets, hidden_dims, n_layers):
         """Constructor of PinSAGE model class.
-        
+
         Args:
             full_graph (dgl.DGLGraph): bipartite user-item graph
             ntype (str): item node name
@@ -32,12 +32,12 @@ class PinSAGEModel(nn.Module):
 
     def forward(self, pos_graph, neg_graph, blocks):
         """Forward propogation of PinSAGE model.
-        
+
         Args:
             pos_graph (dgl.DGLGraph): positive-connected graph
             neg_graph (dgl.DGLGraph): negative-connected graph
             blocks (list[dgl.DGLBlock]): sample neighborhood graphs for each layer
-            
+
         Returns:
            A torch.Tensor of the nonnegative values of (negative scores - positive scores + 1).
         """
@@ -125,7 +125,7 @@ def train(dataset, args):
 
     # For each batch of head-tail-negative triplets...
     for epoch_id in range(args.num_epochs):
-        
+
         # Train
         model.train()
         for batch_id in tqdm.trange(args.batches_per_epoch):
@@ -164,7 +164,7 @@ def train(dataset, args):
 
 def test(dataset, args):
     model.eval()
-    with torch.no_grad()
+    with torch.no_grad():
         item_batches = torch.arange(g.number_of_nodes(item_ntype)).split(args.batch_size)
         h_item_batches = []
         for blocks in dataloader_test:
@@ -173,7 +173,8 @@ def test(dataset, args):
             h_item_batches.append(model.get_repr(blocks))
         h_item = torch.cat(h_item_batches, 0) # item node embeddings
         print(evaluation.evaluate_nn(dataset, h_item, args.k, args.batch_size))
-            
+
+
 if __name__ == '__main__':
     # Arguments
     parser = argparse.ArgumentParser()

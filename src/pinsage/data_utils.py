@@ -1,8 +1,8 @@
-import torch
+# import torch
 import dgl
 import numpy as np
 import scipy.sparse as ssp
-import tqdm
+# import tqdm
 import dask.dataframe as dd
 
 
@@ -81,8 +81,9 @@ def build_train_graph(g, train_indices, utype, itype, etype, etype_rev):
     # create subgraph induced by train edges
     train_g = g.edge_subgraph(
         {etype: train_indices, etype_rev: train_indices},
-        preserve_nodes=True)
-    
+        preserve_nodes=True
+    )
+
     # remove the induced node IDs - should be assigned by model instead
     del train_g.nodes[utype].data[dgl.NID]
     del train_g.nodes[itype].data[dgl.NID]
@@ -116,24 +117,30 @@ def build_val_test_matrix(g, val_indices, test_indices, utype, itype, etype):
     """
     n_users = g.number_of_nodes(utype) # number of users
     n_items = g.number_of_nodes(itype) # number of items
-    
+
     # get tensors source and destination nodes for validation edges
     val_src, val_dst = g.find_edges(val_indices, etype=etype)
-    
+
     # get tensors source and destination nodes for test edges
     test_src, test_dst = g.find_edges(test_indices, etype=etype)
-    
+
     # convert tensors to numpy arrays
     val_src = val_src.numpy()
     val_dst = val_dst.numpy()
     test_src = test_src.numpy()
     test_dst = test_dst.numpy()
-    
+
     # create sparse validation adjacency matrix
-    val_matrix = ssp.coo_matrix((np.ones_like(val_src), (val_src, val_dst)), shape=(n_users, n_items))
-    
+    val_matrix = ssp.coo_matrix(
+        (np.ones_like(val_src), (val_src, val_dst)), 
+        shape=(n_users, n_items)
+    )
+
     # create sparse test adjacency matrix
-    test_matrix = ssp.coo_matrix((np.ones_like(test_src), (test_src, test_dst)), shape=(n_users, n_items))
+    test_matrix = ssp.coo_matrix(
+        (np.ones_like(test_src), (test_src, test_dst)), 
+        shape=(n_users, n_items)
+    )
 
     return val_matrix, test_matrix
 

@@ -1,26 +1,16 @@
+import pickle
+import argparse
 import numpy as np
 import torch
-import pickle
 import dgl
-import argparse
 
-def prec(recommendations, ground_truth):
-    """Returns hitrate metric @ k of recommendations compared to a ground truth matrix.
-
-    Args:
-        recommendations (torch.Tensor): list of recommendations
-        ground_truth (scipy.sparse.csr_matrix): validation or test matrix
-    """
-    n_users, n_items = ground_truth.shape
-    K = recommendations.shape[1]
-    user_idx = np.repeat(np.arange(n_users), K)
-    item_idx = recommendations.flatten()
-    relevance = ground_truth[user_idx, item_idx].reshape((n_users, K))
-    hit = relevance.any(axis=1).mean()
-    return hit
 
 class LatestNNRecommender(object):
-    """class docstring for LatestNNRecommender."""
+    """
+    LatestNNRecommender class uses given item embeddings to
+    recommend k-nearest neighboring items.
+    """
+
     def __init__(self, user_ntype, item_ntype, user_to_item_etype, timestamp, batch_size):
         """Constructor of LatestNNRecommender class.
 
@@ -40,7 +30,7 @@ class LatestNNRecommender(object):
         """
 
         Args:
-            full_graph (dgl.DGLGraph):
+            full_graph (dgl.DGLGraph): bipartite user-item graph
             K (int): number of items to recommend.
             h_user (None): user node embeddings?
             h_item (torch.FloatTensor): item node embeddings
@@ -48,11 +38,22 @@ class LatestNNRecommender(object):
         Returns:
             Returns an (n_user, K) matrix of recommended items for each user.
         """
+        # get subgraph of all user-item edges
         graph_slice = full_graph.edge_type_subgraph([self.user_to_item_etype])
-        n_users = full_graph.number_of_nodes(self.user_ntype)
-        latest_interactions = dgl.sampling.select_topk(graph_slice, 1, self.timestamp, edge_dir='out')
+
+        # get latest interaction for each user
+        latest_interactions = dgl.sampling.select_topk(
+            graph_slice,    # graph
+            1,              # number of edges
+            self.timestamp, # edge weight
+            edge_dir='out'
+        )
+
+        # get all users and their latest items
         user, latest_items = latest_interactions.all_edges(form='uv', order='srcdst')
+
         # each user should have at least one "latest" interaction
+        n_users = full_graph.number_of_nodes(self.user_ntype)
         assert torch.equal(user, torch.arange(n_users))
 
         recommended_batches = []
@@ -70,7 +71,23 @@ class LatestNNRecommender(object):
         return recommendations
 
 
-def evaluate_nn(dataset, h_item, k, batch_size):
+def prec(recommendations, ground_truth):
+    """Returns hitrate metric @ k of recommendations compared to a ground truth matrix.
+
+    Args:
+        recommendations (torch.Tensor): list of recommendations
+        ground_truth (scipy.sparse.csr_matrix): validation or test matrix
+    """
+    n_users, n_items = ground_truth.shape
+    K = recommendations.shape[1]
+    user_idx = np.repeat(np.arange(n_users), K)
+    item_idx = recommendations.flatten()
+    relevance = ground_truth[user_idx, item_idx].reshape((n_users, K))
+    hit = relevance.any(axis=1).mean()
+    return hit
+
+
+def evaluate_nn(dataset, h_item, k, batch_size, test_mode=False):
     """Evaluates and returns hit-rate @ k metric using the LatestNNRecommender class.
 
     Args:
@@ -78,11 +95,10 @@ def evaluate_nn(dataset, h_item, k, batch_size):
         h_item (torch.FloatTensor): item node embeddings
         k (int): number of neighbors to recommend
         batch_size (int): batch size
+        test_mode (bool): evaluate test set
     """
     g = dataset['train-graph']
-    val_matrix = dataset['val-matrix'].tocsr()
-    test_matrix = dataset['test-matrix'].tocsr()
-    item_texts = dataset['item-texts']
+    # item_texts = dataset['item-texts']
     user_ntype = dataset['user-type']
     item_ntype = dataset['item-type']
     user_to_item_etype = dataset['user-to-item-type']
@@ -91,11 +107,12 @@ def evaluate_nn(dataset, h_item, k, batch_size):
     rec_engine = LatestNNRecommender(
         user_ntype, item_ntype, user_to_item_etype, timestamp, batch_size)
 
-    # get k recommendations
+    # get k recommendations using embeddings
     recommendations = rec_engine.recommend(g, k, None, h_item).cpu().numpy()
-    
-    # return 
-    return prec(recommendations, val_matrix)
+
+    if test_mode:
+        return prec(recommendations, dataset['test-matrix'].tocsr())
+    return prec(recommendations, dataset['val-matrix'].tocsr())
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

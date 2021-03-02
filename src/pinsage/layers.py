@@ -159,7 +159,7 @@ class WeightedSAGEConv(nn.Module):
         """Forward propgation of Weighted SAGE convolution layer.
 
         Args:
-            g (): graph
+            g (dgl.DGLGraph): graph
             h (): node features
             weights (): scalar edge weights
         """
@@ -182,10 +182,10 @@ class SAGENet(nn.Module):
         """Constructor method of SAGENet layer.
 
         Args:
-            hidden_dims:
-            n_layers:
+            hidden_dims (int): number of hidden units
+            n_layers (int): number of SAGE layers
 
-        TODO: where does this go?
+         TODO: where does this go?
             g: DGLHeteroGraph
                 The user-item interaction graph.
                 This is only for finding the range of categorical variables.
