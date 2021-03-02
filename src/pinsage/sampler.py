@@ -39,7 +39,7 @@ class ItemToItemBatchSampler(IterableDataset):
 
     def __iter__(self):
         """
-        Iterator that yields batch-sized torch.Tensors of 
+        Iterator that yields batch-sized torch.Tensors of
         head nodes, tail nodes, and negative tail nodes.
         """
         while True:
@@ -108,9 +108,9 @@ class NeighborSampler(object):
             if heads is not None:
                 # find edge IDs of head-tail and head-neg_tail edges
                 eids = frontier.edge_ids(
-                        torch.cat([heads, heads]), torch.cat([tails, neg_tails]),
-                        return_uv=True
-                    )[2]
+                    torch.cat([heads, heads]), torch.cat([tails, neg_tails]),
+                    return_uv=True
+                )[2]
                 if len(eids) > 0:
                     old_frontier = frontier
                     frontier = dgl.remove_edges(old_frontier, eids)
