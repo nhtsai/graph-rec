@@ -84,6 +84,8 @@ class BagOfWordsPretrained(nn.Module):
         Args:
             x (torch.LongTensor): tensor of size (batch_size, max_length)
             length (torch.LongTensor): tensor of size (batch_size,)
+
+        Returns:
         """
         x = self.emb(x).sum(1) / length.unsqueeze(1).float()
         return self.proj(x)
