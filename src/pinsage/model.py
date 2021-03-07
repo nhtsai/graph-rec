@@ -180,7 +180,7 @@ def train(dataset, model_cfg):
 
             # Calculate loss
             loss = model(pos_graph, neg_graph, blocks).mean()
-            batch_losses.append(loss)
+            batch_losses.append(loss.data)
             # Zero optimizer gradients
             opt.zero_grad()
 
@@ -214,7 +214,7 @@ def train(dataset, model_cfg):
                 dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
 
             # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
-            print("Evaluation: loss: {}, hit@{}: {}, precision: {}, recall: {}".format(np.mean(batch_losses), model_cfg['k'], hit, precision, recall))
+            print("Evaluation: loss: {}, hit@{}: {}, precision: {}, recall: {}".format(np.mean(np.array(batch_losses)), model_cfg['k'], hit, precision, recall))
 
         # save model after every epoch
         state = {
