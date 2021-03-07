@@ -1,7 +1,7 @@
 {
 	"data-dir": "../../data",
 	"dataset-name": "Amazon_Electronics",
-	"metadata-fn": "meta_Electroncis.json.gz",
+	"metadata-fn": "meta_Electronics.json.gz",
 	"reviews-fn": "reviews_Electronics_5.json.gz",
 	"image-fn": "image_features_Electronics.b",
 	"product-out-fn": "products.pkl",
