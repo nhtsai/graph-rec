@@ -180,7 +180,7 @@ def train(dataset, model_cfg):
 
             # Calculate loss
             loss = model(pos_graph, neg_graph, blocks).mean()
-            batch_losses.append(loss.data)
+            batch_losses.append(loss.item())
             # Zero optimizer gradients
             opt.zero_grad()
 
