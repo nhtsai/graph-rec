@@ -132,8 +132,9 @@ def main(data_cfg):
     # filter products with both reviews and images
     products = products.copy()[products['asin'].isin(distinct_products_all)]
     # mean impute product prices
-    mean_price = products['price'].mean()
+    mean_price = np.round(products['price'].mean(), 2)
     products['price'] = products['price'].fillna(mean_price)
+    products['price'] = (100 * products['price']).astype(int)
 
     ### USERS ###
     print("Processing users...")
@@ -160,7 +161,7 @@ def main(data_cfg):
     ### ADD FEATURES TO GRAPH ###
     print("Adding features to graph...")
     # add product features
-    g.nodes['product'].data['price'] = torch.FloatTensor(products['price'].values)
+    g.nodes['product'].data['price'] = torch.LongTensor(products['price'].values)
     g.nodes['product'].data['image'] = \
         torch.FloatTensor([img_dict[i] for i in products['asin'].values])
     # add edge features
@@ -193,7 +194,7 @@ def main(data_cfg):
         'train-graph': train_g,
         'val-matrix': val_matrix,
         'test-matrix': test_matrix,
-        'item-texts': {'title': products['title'].values},
+        'item-texts': {'title': products['title'].values.astype(str)},
         # 'item-images': img_dict,
         'user-type': 'user',
         'item-type': 'product',
