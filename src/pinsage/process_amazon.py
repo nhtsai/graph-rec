@@ -164,12 +164,12 @@ def main(data_cfg):
     g.nodes['product'].data['image'] = \
         torch.FloatTensor([img_dict[i] for i in products['asin'].values])
     # add edge features
-    g.edges['watched'].data['rating'] = torch.FloatTensor(events['overall'].values)
-    g.edges['watched'].data['helpful'] = torch.FloatTensor(events['helpful'].values)
-    g.edges['watched'].data['timestamp'] = torch.LongTensor(events['unixReviewTime'].values)
-    g.edges['watched-by'].data['rating'] = torch.FloatTensor(events['overall'].values)
-    g.edges['watched-by'].data['helpful'] = torch.FloatTensor(events['helpful'].values)
-    g.edges['watched-by'].data['timestamp'] = torch.LongTensor(events['unixReviewTime'].values)
+    g.edges['reviewed'].data['rating'] = torch.FloatTensor(events['overall'].values)
+    g.edges['reviewed'].data['helpful'] = torch.FloatTensor(events['helpful'].values)
+    g.edges['reviewed'].data['timestamp'] = torch.LongTensor(events['unixReviewTime'].values)
+    g.edges['reviewed-by'].data['rating'] = torch.FloatTensor(events['overall'].values)
+    g.edges['reviewed-by'].data['helpful'] = torch.FloatTensor(events['helpful'].values)
+    g.edges['reviewed-by'].data['timestamp'] = torch.LongTensor(events['unixReviewTime'].values)
 
     ### TRAIN, VAL, TEST SPLIT ###
     print("Splitting data...")
