@@ -1,7 +1,11 @@
 {
-	"datadir": "data/",
-	"dataset_name": "Amazon Books",
-	"image_dataset": "image_features_Books.b",
-	"meta_dataset": "meta_Books.json.gz",
-	"output_fp": "data/data.pkl"
+	"data-dir": "../../data",
+	"dataset-name": "Amazon_Books",
+	"metadata-fn": "meta_Books.json.gz",
+	"reviews-fn": "reviews_Electronics_5.json.gz",
+	"image-fn": "image_features_Books.b",
+	"product-out-fn": "products.pkl",
+	"user-out-fn": "users.pkl",
+	"image-out-fn": "images.pkl",
+	"data-out-fn": "processed_Amazon_Books.pkl"
 }
