@@ -1,4 +1,3 @@
-# import numpy as np
 import dgl
 import torch
 from torch.utils.data import IterableDataset, DataLoader
@@ -81,9 +80,12 @@ class NeighborSampler(object):
 
         # Create a PinSAGESampler for each layer.
         self.samplers = [
-            dgl.sampling.PinSAGESampler(g, item_type, user_type, random_walk_length,
-                                        random_walk_restart_prob, num_random_walks, num_neighbors)
-            for _ in range(num_layers)]
+            dgl.sampling.PinSAGESampler(
+                g, item_type, user_type,
+                random_walk_length, random_walk_restart_prob,
+                num_random_walks, num_neighbors
+            ) for _ in range(num_layers)
+        ]
 
     def sample_blocks(self, seeds, heads=None, tails=None, neg_tails=None):
         """Samples and returns a list of blocks of neighboring nodes.
@@ -154,6 +156,17 @@ class NeighborSampler(object):
         blocks = self.sample_blocks(seeds, heads, tails, neg_tails)
         return pos_graph, neg_graph, blocks
 
+    # def get_block(self, seeds, ntype, textset=None, imgset=None):
+    #     """TODO: docstring"""
+    #     blocks = []
+    #     for sampler in self.samplers:
+    #         frontier = sampler(seeds)
+    #         block = compact_and_copy(frontier, seeds)
+    #         seeds = block.srcdata[dgl.base.NID]
+    #         blocks.insert(0, block)
+    #     assign_features_to_blocks(blocks, self.g, textset, imgset, ntype)
+    #     return blocks
+
 def assign_simple_node_features(ndata, g, ntype, assign_id=False):
     """Copies data to the given block from the corresponding nodes in the original graph.
 
@@ -163,13 +176,18 @@ def assign_simple_node_features(ndata, g, ntype, assign_id=False):
         ntype (str): node name
         assign_id (bool): Optional; whether to assign node ID
     """
+    # induced nodes form the block subgraph
+    induced_nodes = ndata[dgl.NID].numpy()
+
+    # for each simple node feature
     for col in g.nodes[ntype].data.keys():
+        # skip feature if no asigning id and feature column is node ID
         if not assign_id and col == dgl.NID:
             continue
-        induced_nodes = ndata[dgl.NID]
+        # assign block node data to the induced node features
         ndata[col] = g.nodes[ntype].data[col][induced_nodes]
 
-def assign_textual_node_features(ndata, textset, ntype):
+def assign_textual_node_features(ndata, textset):
     """
     Assigns numericalized tokens from a torchtext dataset to given block.
 
@@ -190,11 +208,14 @@ def assign_textual_node_features(ndata, textset, ntype):
         textset (torchtext.data.Dataset): A torchtext dataset whose number
             of examples is the same as that of nodes in the original graph.
     """
+    # get induced node ids
     node_ids = ndata[dgl.NID].numpy()
 
     for field_name, field in textset.fields.items():
+        # get the text field of each node's textset
         examples = [getattr(textset[i], field_name) for i in node_ids]
 
+        # get tokenized text and lengths
         tokens, lengths = field.process(examples)
 
         if not field.batch_first:
@@ -203,20 +224,34 @@ def assign_textual_node_features(ndata, textset, ntype):
         ndata[field_name] = tokens
         ndata[field_name + '__len'] = lengths
 
+# def assign_visual_node_features(ndata, imgset):
+#     """Assigns image feature from a image dataset dictionary to the given block.
+
+#     Args:
+#         ndata (dict[str, torch.Tensor]): node data from dgl.DGLBlock sampled neighbor graph
+#         imgset (dict[str, np.ndarray]): image representations from image feature dictionary
+#     """
+#     node_ids = ndata[dgl.NID].numpy()
+#     ndata['image'] = torch.FloatTensor([imgset[i] for i in node_ids])
+
 def assign_features_to_blocks(blocks, g, textset, ntype):
     """For the first block (which is closest to the input),
     copy the features from the original graph as well as the texts.
 
     Args:
-        blocks (list of dgl.DGLBlocks): sampled neighbor blocks
+        blocks (list[dgl.DGLBlocks]): sampled neighbor blocks
         g (dgl.DGLGraph): bipartite user-item graph
         textset (torchtext.data.Dataset): text features
+        imgset (dict): image features
         ntype (str): item node name
     """
+    # assign features to the first block
     assign_simple_node_features(blocks[0].srcdata, g, ntype)
-    assign_textual_node_features(blocks[0].srcdata, textset, ntype)
+    assign_textual_node_features(blocks[0].srcdata, textset)
+    # assign_visual_node_features(blocks[0].srcdata, imgset)
     assign_simple_node_features(blocks[-1].dstdata, g, ntype)
-    assign_textual_node_features(blocks[-1].dstdata, textset, ntype)
+    assign_textual_node_features(blocks[-1].dstdata, textset)
+    # assign_visual_node_features(blocks[-1].dstdata, imgset)
 
 class PinSAGECollator(object):
     """PinSAGECollator class."""
@@ -228,23 +263,26 @@ class PinSAGECollator(object):
             g (dgl.DGLGraph): bipartite user-item graph
             ntype (str): item node name
             textset (torchtext.data.Dataset): text features
+            imgset (dict): image features
         """
         self.sampler = sampler
         self.ntype = ntype
         self.g = g
         self.textset = textset
+        # self.imgset = imgset
 
     def collate_train(self, batches):
         """Collates training input samples into batches.
 
         Args:
-            batches (tuple of torch.Tensors): head, tail, and negative tail node IDs
-                                              generated from ItemToItemBatchSampler.
+            batches (tuple[torch.Tensors]):
+                head, tail, and negative tail node IDs
+                generated from ItemToItemBatchSampler.
 
         Returns:
             A dgl.DGLGraph made from positive edges,
             a dgl.DGLGraph made from negative edges, and
-            a list of dgl.DGLBlock graphs made from sampled neighbors to seed node edges.
+            a list of dgl.DGLBlock graphs connecting sampled neighbors to seed nodes.
         """
         heads, tails, neg_tails = batches[0]
         # Construct multilayer neighborhood via PinSAGE...
@@ -257,11 +295,11 @@ class PinSAGECollator(object):
         """Collates test dataset into blocks
 
         Args:
-            samples (list of int): a list of sampled node IDs
+            samples (list[int]): a list of sampled node IDs
 
         Returns:
             A list of dgl.DGLBlock graphs created from
-            given sampled node IDs, with node and text features.
+            given sampled node IDs, with item, text, and image features.
         """
         # get test seeds
         batch = torch.LongTensor(samples)
