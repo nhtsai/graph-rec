@@ -119,13 +119,13 @@ def train(dataset, model_cfg):
 
     # Batch Sampler
     batch_sampler = sampler_module.ItemToItemBatchSampler(
-        g, user_ntype, item_ntype, model_cfg['batch_size'])
+        g, user_ntype, item_ntype, model_cfg['batch-size'])
 
     # Neighbor Sampler
     neighbor_sampler = sampler_module.NeighborSampler(
         g, user_ntype, item_ntype,
-        model_cfg['random_walk_length'], model_cfg['random_walk_restart_prob'],
-        model_cfg['num_random_walks'], model_cfg['num_neighbors'], model_cfg['num_layers'])
+        model_cfg['random-walk-length'], model_cfg['random-walk-restart-prob'],
+        model_cfg['num-random-walks'], model_cfg['num-neighbors'], model_cfg['num-layers'])
 
     # Collator
     collator = sampler_module.PinSAGECollator(neighbor_sampler, g, item_ntype, textset)
@@ -134,20 +134,20 @@ def train(dataset, model_cfg):
     dataloader = DataLoader(
         batch_sampler,
         collate_fn=collator.collate_train,
-        num_workers=model_cfg['num_workers'])
+        num_workers=model_cfg['num-workers'])
 
     # Test Data Loader
     dataloader_test = DataLoader(
         torch.arange(g.number_of_nodes(item_ntype)),
-        batch_size=model_cfg['batch_size'],
+        batch_size=model_cfg['batch-size'],
         collate_fn=collator.collate_test,
-        num_workers=model_cfg['num_workers'])
+        num_workers=model_cfg['num-workers'])
 
     # training Data Loader Iterator
     dataloader_it = iter(dataloader)
 
     # Model
-    model = PinSAGEModel(g, item_ntype, textset, model_cfg['hidden_dims'], model_cfg['num_layers']).to(device)
+    model = PinSAGEModel(g, item_ntype, textset, model_cfg['hidden-dims'], model_cfg['num-layers']).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=model_cfg['lr'])
     start_epoch = 0
 
@@ -162,11 +162,11 @@ def train(dataset, model_cfg):
         start_epoch = state['epoch']
 
     # For each batch of head-tail-negative triplets...
-    for epoch_id in range(start_epoch, model_cfg['num_epochs'] + start_epoch):
+    for epoch_id in range(start_epoch, model_cfg['num-epochs'] + start_epoch):
 
         # Train
         model.train()
-        for batch_id in tqdm(range(model_cfg['batches_per_epoch'])):
+        for batch_id in tqdm(range(model_cfg['batches-per-epoch'])):
 
             # get next batch of training data
             pos_graph, neg_graph, blocks = next(dataloader_it)
@@ -195,7 +195,7 @@ def train(dataset, model_cfg):
         model.eval()
         with torch.no_grad():
             # item batches are groups of node numbers
-            item_batches = torch.arange(g.number_of_nodes(item_ntype)).split(model_cfg['batch_size'])
+            item_batches = torch.arange(g.number_of_nodes(item_ntype)).split(model_cfg['batch-size'])
             h_item_batches = []
             # use test dataloader to get sampled neighbors
             for blocks in dataloader_test:
@@ -210,7 +210,7 @@ def train(dataset, model_cfg):
 
             # calculate model evaluation metrics
             hit, precision, recall = evaluation.evaluate(
-                dataset, h_item, model_cfg['k'], model_cfg['batch_size'])
+                dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
 
             print("Evaluation @ {}: hit: {}, precision: {}, recall: {}"
                   .format(model_cfg['k'], hit, precision, recall))
@@ -223,11 +223,12 @@ def train(dataset, model_cfg):
             'loss': epoch_loss,
             'item_embeddings': h_item,
             'k': model_cfg['k'],
-            'batch_size': model_cfg['batch_size']
+            'batch_size': model_cfg['batch-size']
         }
         torch.save(state, "{}_model_{}.pth".format(model_cfg['name'], epoch_id))
 
-    return model, opt, h_item
+    return
+    # return model, opt, h_item
 
 
 if __name__ == '__main__':
@@ -261,5 +262,5 @@ if __name__ == '__main__':
     with open(os.path.join(config_dir, config_fn)) as fh:
         model_config = json.load(fh)
 
-    print("beginning training")
+    print("Training model...")
     train(dataset, model_config)
