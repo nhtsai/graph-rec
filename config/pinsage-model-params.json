@@ -8,10 +8,10 @@
 	"hidden-dims": 64,
 	"batch-size": 32,
 	"num-epochs": 100,
-	"batches-per-epoch": 512,
+	"batches-per-epoch": 1024,
 	"num-workers": 2,
 	"lr": 3e-5,
-	"k": 10,
+	"k": 500,
 	"model-dir": "../../data",
 	"existing-model": null
 }

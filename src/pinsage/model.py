@@ -190,7 +190,7 @@ def train(dataset, model_cfg):
             # Adjust model weights
             opt.step()
 
-            print("Training: epoch: {}, batch: {}, loss: {}".format(epoch_id, batch_id, loss))
+            print("Training: epoch: {}, batch: {}, loss: {:.4f}".format(epoch_id, batch_id, loss))
 
         # Evaluate validation set after training epoch
         model.eval()
@@ -213,8 +213,9 @@ def train(dataset, model_cfg):
             hit, precision, recall = evaluation.evaluate(
                 dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
 
+            epoch_loss = np.mean(np.array(batch_losses))
             # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
-            print("Evaluation: loss: {}, hit@{}: {}, precision: {}, recall: {}".format(np.mean(np.array(batch_losses)), model_cfg['k'], hit, precision, recall))
+            print("Evaluation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(epoch_loss, model_cfg['k'], hit, precision, recall))
 
         # save model after every epoch
         state = {

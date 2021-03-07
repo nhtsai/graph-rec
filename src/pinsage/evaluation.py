@@ -173,7 +173,8 @@ def evaluate(dataset, h_item, k, batch_size, use_test_set=False):
     Returns:
         HITS, average precision, and average recall metrics on the validation or test dataset
     """
-    g = dataset['train-graph']
+    # g = dataset['train-graph']
+    g = dataset['full-graph']
     val_matrix = dataset['val-matrix'].tocsr()
     test_matrix = dataset['test-matrix'].tocsr()
     user_ntype = dataset['user-type']
