@@ -43,7 +43,7 @@ def _init_input_modules(g, ntype, textset, hidden_dims):
 
         # data is of type float
         if data.dtype == torch.float32:
-            assert data.ndim == 2
+            assert data.ndim == 2, "{} dimensions must be 2 not {}".format(column, data.ndim)
             m = nn.Linear(data.shape[1], hidden_dims)
             nn.init.xavier_uniform_(m.weight)
             nn.init.constant_(m.bias, 0)
