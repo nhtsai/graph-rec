@@ -1,14 +1,12 @@
-# import torch
 import dgl
 import numpy as np
 import scipy.sparse as ssp
-# import tqdm
 import dask.dataframe as dd
 
 
 def train_test_split_by_time(df, timestamp, user):
     """Creates train-test splits of dataset by training on past to predict the future.
-    
+
     This is the train-test split method most of the recommender system papers running on MovieLens
     takes. It essentially follows the intuition of "training on the past and predict the future".
     One can also change the threshold to make validation and test set take larger proportions.
@@ -19,14 +17,13 @@ def train_test_split_by_time(df, timestamp, user):
         user (str): name of column with user id data
 
     Returns:
-        Train, validation, and test indices, represented as NumPy arrays.
+        Train, validation, and test indices of edges, represented as NumPy arrays.
     """
-
     # Create masks for train, validation, and test sets
     df['train_mask'] = np.ones((len(df),), dtype=np.bool) # all true
     df['val_mask'] = np.zeros((len(df),), dtype=np.bool) # all false
     df['test_mask'] = np.zeros((len(df),), dtype=np.bool) # all false
-    
+
     # Split dataframe into dask dataframe partitions
     df = dd.from_pandas(df, npartitions=10)
 
@@ -40,12 +37,12 @@ def train_test_split_by_time(df, timestamp, user):
             A dataframe with train, validation, and test mask columns.
         """
         df = df.sort_values([timestamp]) # sort dataframe by timestamp
-        
+
         # if more than 1 row, move last row from train mask to test mask
         if df.shape[0] > 1:
             df.iloc[-1, -3] = False
             df.iloc[-1, -1] = True
-        
+
         # if more than 2 rows, move 2nd to last row from train mask to validation mask
         if df.shape[0] > 2:
             df.iloc[-2, -3] = False
@@ -78,22 +75,22 @@ def build_train_graph(g, train_indices, utype, itype, etype, etype_rev):
     Returns:
         A subgraph induced by edges for training, with node and edge features.
     """
-    # create subgraph induced by train edges
+    # Create subgraph induced by train edges
     train_g = g.edge_subgraph(
         {etype: train_indices, etype_rev: train_indices},
         preserve_nodes=True
     )
 
-    # remove the induced node IDs - should be assigned by model instead
+    # Remove the induced node IDs - should be assigned by model instead
     del train_g.nodes[utype].data[dgl.NID]
     del train_g.nodes[itype].data[dgl.NID]
 
-    # copy node features to subgraph
+    # Copy node features to subgraph
     for ntype in g.ntypes:
         for col, data in g.nodes[ntype].data.items():
             train_g.nodes[ntype].data[col] = data
 
-    # copy edge features to subgraph
+    # Copy edge features to subgraph
     for etype in g.etypes:
         for col, data in g.edges[etype].data.items():
             train_g.edges[etype].data[col] = data[train_g.edges[etype].data[dgl.EID]]
@@ -132,13 +129,13 @@ def build_val_test_matrix(g, val_indices, test_indices, utype, itype, etype):
 
     # create sparse validation adjacency matrix
     val_matrix = ssp.coo_matrix(
-        (np.ones_like(val_src), (val_src, val_dst)), 
+        (np.ones_like(val_src), (val_src, val_dst)),
         shape=(n_users, n_items)
     )
 
     # create sparse test adjacency matrix
     test_matrix = ssp.coo_matrix(
-        (np.ones_like(test_src), (test_src, test_dst)), 
+        (np.ones_like(test_src), (test_src, test_dst)),
         shape=(n_users, n_items)
     )
 
