@@ -92,6 +92,7 @@ def main(data_cfg):
     data_out_fn = data_cfg['data-out-fn']
 
     ### REVIEWS ###
+    print("Processing review data...")
     reviews_path = os.path.join(data_dir, reviews_fn)
     reviews = getDF(reviews_path)
     reviews = reviews.drop(['reviewerName', 'reviewTime', 'reviewText'], axis=1).dropna()
@@ -101,25 +102,30 @@ def main(data_cfg):
 
     ### IMAGES ###
     # filter images for products with reviews
+    print("Processing image features...")
     image_path = os.path.join(data_dir, image_fn)
     distinct_products_in_reviews = reviews['asin'].unique()
     img_dict = filter_image_features(image_path, distinct_products_in_reviews)
 
     # save filtered image features dict
-    image_out_path = os.path.join(data_dir, image_out_fn)
-    with open(image_out_path, 'wb') as fp:
-        pickle.dump(img_dict, fp)
+    # image_out_path = os.path.join(data_dir, image_out_fn)
+    # with open(image_out_path, 'wb') as fp:
+    #     print("Saving image dictionary dataset...")
+    #     pickle.dump(img_dict, fp)
 
     # save distinct product list
     distinct_products_all = img_dict.keys()
     with open(os.path.join(data_dir, product_out_fn), 'wb') as fp:
+        print("Saving product list...")
         pickle.dump(distinct_products_all, fp)
 
     ### PRODUCTS ###
+    print("Processing product metadata...")
     products_path = os.path.join(data_dir, metadata_fn)
     products = getDF(products_path)
 
     ### FILTER ###
+    print("Filtering reviews and products...")
     # filter reviews for products with image features
     reviews = reviews.copy()[reviews['asin'].isin(distinct_products_all)]
 
@@ -130,16 +136,20 @@ def main(data_cfg):
     products['price'] = products['price'].fillna(mean_price)
 
     ### USERS ###
+    print("Processing users...")
     users = reviews[['reviewerID']].drop_duplicates()
 
     # save distinct user list
     with open(os.path.join(data_dir, user_out_fn), 'wb') as fp:
+        print("Saving user list...")
         pickle.dump(users['reviewerID'].values, fp)
 
     ### EVENTS ###
+    print("Processing interaction events...")
     events = reviews[['reviewerID', 'asin', 'unixReviewTime', 'helpful', 'overall']]
 
     ### BUILD GRAPH ###
+    print("Building graph...")
     graph_builder = PandasGraphBuilder()
     graph_builder.add_entities(users, 'reviewerID', 'user')
     graph_builder.add_entities(products, 'asin', 'product')
@@ -148,6 +158,7 @@ def main(data_cfg):
     g = graph_builder.build()
 
     ### ADD FEATURES TO GRAPH ###
+    print("Adding features to graph...")
     # add product features
     g.nodes['product'].data['price'] = torch.FloatTensor(products['price'].values)
     g.nodes['product'].data['image'] = \
@@ -161,16 +172,19 @@ def main(data_cfg):
     g.edges['watched-by'].data['timestamp'] = torch.LongTensor(events['unixReviewTime'].values)
 
     ### TRAIN, VAL, TEST SPLIT ###
+    print("Splitting data...")
     train_indices, val_indices, test_indices = train_test_split_by_time(
         events, 'unixReviewTime', 'reviewerID')
 
     ### BUILD TRAIN GRAPH ###
+    print("Building training graph...")
     train_g = build_train_graph(
         g, train_indices, 'user', 'product', 'reviewed', 'reviewed-by')
     # check for products with no reviews
     assert train_g.out_degrees(etype='reviewed').min() > 0
 
     ### BUILD VAL & TEST MATRICES ###
+    print("Building validation/test matrices...")
     val_matrix, test_matrix = build_val_test_matrix(
         g, val_indices, test_indices, 'user', 'product', 'reviewed')
 
@@ -189,9 +203,11 @@ def main(data_cfg):
 
     output_path = os.path.join(data_dir, data_out_fn)
     with open(output_path, 'wb') as f:
+        print("Saving processed dataset...")
         pickle.dump(dataset, f)
 
 if __name__ == "__main__":
+    print("Reading data config...")
     config_dir = "../../config"
     config_fn = "data-params.json"
     with open(os.path.join(config_dir, config_fn)) as fh:
