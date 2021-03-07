@@ -94,6 +94,9 @@ def train(dataset, model_cfg):
     g.nodes[item_ntype].data['id'] = torch.arange(g.number_of_nodes(item_ntype))
 
     # Text Features
+
+    for k in item_texts:
+        item_texts[k] = item_texts[k].astype(str)
     # Prepare torchtext dataset and vocabulary
     if item_texts is not None:
         fields = {}
