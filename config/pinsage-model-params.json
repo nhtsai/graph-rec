@@ -1,7 +1,7 @@
 {
 	"name": "AmazonElectronics-00",
 	"random-walk-length": 2,
-	"random-walk-restart_prob": 0.5,
+	"random-walk-restart-prob": 0.5,
 	"num-random-walks": 10,
 	"num-neighbors": 3,
 	"num-layers": 2,
