@@ -167,30 +167,33 @@ def train(dataset, model_cfg):
         batch_losses = []
         # Train
         model.train()
-        for batch_id in tqdm(range(model_cfg['batches-per-epoch'])):
+        with tqdm(range(model_cfg['batches-per-epoch'])) as t:
+            for batch_id in t:
 
-            # get next batch of training data
-            pos_graph, neg_graph, blocks = next(dataloader_it)
+                # get next batch of training data
+                pos_graph, neg_graph, blocks = next(dataloader_it)
 
-            # Copy to GPU
-            for i in range(len(blocks)):
-                blocks[i] = blocks[i].to(device)
-            pos_graph = pos_graph.to(device)
-            neg_graph = neg_graph.to(device)
+                # Copy to GPU
+                for i in range(len(blocks)):
+                    blocks[i] = blocks[i].to(device)
+                pos_graph = pos_graph.to(device)
+                neg_graph = neg_graph.to(device)
 
-            # Calculate loss
-            loss = model(pos_graph, neg_graph, blocks).mean()
-            batch_losses.append(loss.item())
-            # Zero optimizer gradients
-            opt.zero_grad()
+                # Calculate loss
+                loss = model(pos_graph, neg_graph, blocks).mean()
 
-            # Backpropagate loss
-            loss.backward()
+                batch_losses.append(loss.item())
+                # Zero optimizer gradients
+                opt.zero_grad()
 
-            # Adjust model weights
-            opt.step()
+                # Backpropagate loss
+                loss.backward()
 
-            print("Training: epoch: {}, batch: {}, loss: {:.4f}".format(epoch_id, batch_id, loss))
+                # Adjust model weights
+                opt.step()
+
+                # print("Training: epoch: {}, batch: {}, loss: {:.4f}".format(epoch_id, batch_id, loss))
+                t.set_postfix(epoch=epoch_id, batch=batch_id, loss=loss.item())
 
         # Evaluate validation set after training epoch
         model.eval()
@@ -217,17 +220,19 @@ def train(dataset, model_cfg):
             # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
             print("Evaluation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(epoch_loss, model_cfg['k'], hit, precision, recall))
 
-        # save model after every epoch
-        state = {
-            'epoch': epoch_id+1,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': opt.state_dict(),
-            'loss': epoch_loss,
-            'item_embeddings': h_item,
-            'k': model_cfg['k'],
-            'batch_size': model_cfg['batch-size']
-        }
-        torch.save(state, "{}_model_{}.pth".format(model_cfg['name'], epoch_id))
+    # save model
+    model_dir = "../../data"
+    model_fn = "{}_model_{}.pth".format(model_cfg['name'], epoch_id)
+    state = {
+        'epoch': epoch_id+1,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': opt.state_dict(),
+        'loss': epoch_loss,
+        'item_embeddings': h_item,
+        'k': model_cfg['k'],
+        'batch_size': model_cfg['batch-size']
+    }
+    torch.save(state, os.path.join(model_dir, model_fn))
 
     return
     # return model, opt, h_item
