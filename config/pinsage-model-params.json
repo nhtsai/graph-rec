@@ -1,17 +1,17 @@
 {
-	"name": "AmazonElectronics-ti",
+	"name": "AmazonElectronics-00",
 	"random_walk_length": 2,
 	"random_walk_restart_prob": 0.5,
 	"num_random_walks": 10,
 	"num_neighbors": 3,
 	"num_layers": 2,
-	"hidden_dims": 128,
-	"batch-size": 64,
-	"device": "cuda",
-	"num_epochs": 100,
+	"hidden_dims": 64,
+	"batch-size": 32,
+	"num_epochs": 10,
 	"batches_per_epoch": 512,
-	"num_workers": 0,
+	"num_workers": 2,
 	"lr": 3e-5,
 	"k": 10,
+	"model-dir": "../../data",
 	"existing-model": null
 }
