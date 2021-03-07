@@ -164,6 +164,7 @@ def train(dataset, model_cfg):
     # For each batch of head-tail-negative triplets...
     for epoch_id in range(start_epoch, model_cfg['num-epochs'] + start_epoch):
 
+        batch_losses = []
         # Train
         model.train()
         for batch_id in tqdm(range(model_cfg['batches-per-epoch'])):
@@ -179,7 +180,7 @@ def train(dataset, model_cfg):
 
             # Calculate loss
             loss = model(pos_graph, neg_graph, blocks).mean()
-
+            batch_losses.append(loss)
             # Zero optimizer gradients
             opt.zero_grad()
 
@@ -212,8 +213,8 @@ def train(dataset, model_cfg):
             hit, precision, recall = evaluation.evaluate(
                 dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
 
-            print("Evaluation @ {}: hit: {}, precision: {}, recall: {}"
-                  .format(model_cfg['k'], hit, precision, recall))
+            # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
+            print("Evaluation: loss: {}, hit@{}: {}, precision: {}, recall: {}".format(np.mean(batch_losses), model_cfg['k'], hit, precision, recall))
 
         # save model after every epoch
         state = {

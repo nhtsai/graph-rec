@@ -7,7 +7,7 @@
 	"num-layers": 2,
 	"hidden-dims": 64,
 	"batch-size": 32,
-	"num-epochs": 10,
+	"num-epochs": 100,
 	"batches-per-epoch": 512,
 	"num-workers": 2,
 	"lr": 3e-5,
