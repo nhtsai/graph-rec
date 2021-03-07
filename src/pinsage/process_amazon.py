@@ -117,7 +117,7 @@ def main(data_cfg):
     distinct_products_all = img_dict.keys()
     with open(os.path.join(data_dir, product_out_fn), 'wb') as fp:
         print("Saving product list...")
-        pickle.dump(distinct_products_all, fp)
+        pickle.dump(list(distinct_products_all), fp)
 
     ### PRODUCTS ###
     print("Processing product metadata...")
