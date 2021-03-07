@@ -1,11 +1,11 @@
 {
 	"data-dir": "../../data",
-	"dataset-name": "Amazon_Books",
-	"metadata-fn": "meta_Books.json.gz",
+	"dataset-name": "Amazon_Electronics",
+	"metadata-fn": "meta_Electroncis.json.gz",
 	"reviews-fn": "reviews_Electronics_5.json.gz",
-	"image-fn": "image_features_Books.b",
+	"image-fn": "image_features_Electronics.b",
 	"product-out-fn": "products.pkl",
 	"user-out-fn": "users.pkl",
 	"image-out-fn": "images.pkl",
-	"data-out-fn": "processed_Amazon_Books.pkl"
+	"data-out-fn": "processed_Amazon_Electronics.pkl"
 }
