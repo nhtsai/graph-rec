@@ -248,7 +248,7 @@ def test(dataset, model_cfg, item_embeddings):
         dataset, item_embeddings, model_cfg['k'], model_cfg['batch-size'], use_test_set=True)
     print("Validation: hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
         model_cfg['k'], hit, precision, recall))
-    with open(os.path.join(model_cfg['model-dir'], model_cfg['name'] + "_rec.pkl")) as fp:
+    with open(os.path.join(model_cfg['model-dir'], model_cfg['name'] + "_rec.pkl"), 'wb') as fp:
         pickle.dump(recommendations, fp)
     return recommendations
 

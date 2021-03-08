@@ -28,7 +28,9 @@ def main(targets):
 
     # process data using config
     if 'data' in targets:
-        with open("config/data-params.json") as fh:
+        config_dir = "./config"
+        config_fn = "data-params.json"
+        with open(os.path.join(config_dir, config_fn)) as fh:
             data_cfg = json.load(fh)
         dataset = process_amazon.main(data_cfg)
 
@@ -37,7 +39,7 @@ def main(targets):
 
     if 'pinsage' in targets:
         # Load config
-        config_dir = "../../config"
+        config_dir = "./config"
         config_fn = "pinsage-model-params.json"
         with open(os.path.join(config_dir, config_fn)) as fh:
             pinsage_model_cfg = json.load(fh)
@@ -51,7 +53,9 @@ def main(targets):
 
 
     if 'graphsage' in targets:
-        with open('config/graphsage-model-params.json') as fh:
+        config_dir = "./config"
+        config_fn = "graphsage-model-params.json"
+        with open(os.path.join(config_dir, config_fn)) as fh:
             graphsage_model_cfg = json.load(fh)
         graphsage_model = train(data_cfg, graphsage_model_cfg)
         graphsage_model.save() # save model as pth
