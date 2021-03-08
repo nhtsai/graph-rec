@@ -206,6 +206,8 @@ def main(data_cfg):
     with open(output_path, 'wb') as f:
         print("Saving processed dataset...")
         pickle.dump(dataset, f)
+    
+    return dataset
 
 if __name__ == "__main__":
     print("Reading data config...")
