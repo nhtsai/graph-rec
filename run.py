@@ -1,12 +1,9 @@
 import sys
-# import os
+import os
 import json
 
-# from src.pinsage import evaluation
-
-def model_build(model_name, model_cfg):
-    if model_name == 'pinsage':
-        pass
+from src.pinsage import model
+from src.pinsage import process_amazon
 
 def main(targets):
 
@@ -33,34 +30,31 @@ def main(targets):
     if 'data' in targets:
         with open("config/data-params.json") as fh:
             data_cfg = json.load(fh)
-        data = process_data(data_cfg)
-        save(data) # save processed data as pkl
+        dataset = process_amazon.main(data_cfg)
 
     # train model using config
     pinsage_model, graphsage_model = None, None
 
     if 'pinsage' in targets:
-        with open('config/pinsage-model-params.json') as fh:
+        # Load config
+        config_dir = "../../config"
+        config_fn = "pinsage-model-params.json"
+        with open(os.path.join(config_dir, config_fn)) as fh:
             pinsage_model_cfg = json.load(fh)
-        pinsage_model = train(data_cfg, pinsage_model_cfg)
-        pinsage_model.save() # save model as pth
+
+        print("Training model embeddings...")
+        item_embeddings = model.train(dataset, pinsage_model_cfg)
+
+        if 'test' in targets:
+            print("Testing model embeddings...")
+            rec = model.test(dataset, pinsage_model_cfg, item_embeddings)
+
 
     if 'graphsage' in targets:
         with open('config/graphsage-model-params.json') as fh:
             graphsage_model_cfg = json.load(fh)
         graphsage_model = train(data_cfg, graphsage_model_cfg)
         graphsage_model.save() # save model as pth
-
-    if 'test' in targets:
-        recommendations = evaluate(dataset, args, test_mode=True)
-
-
-# load model state_dict?
-# load in val matrix from pkl
-# evaluate on validation
-# load in test matrix from pkl
-# evaluate on test
-# get recommendations for one product
 
     return
 
