@@ -37,7 +37,7 @@ class LatestNNRecommender(object):
             h_item (torch.FloatTensor): item node embeddings
 
         Returns:
-            An (n_user, K) matrix of recommended items for each user.
+            An (n_user, K) torch.Tensor of recommended items for each user.
         """
         # get subgraph of all user-item edges
         graph_slice = full_graph.edge_type_subgraph([self.user_to_item_etype])
@@ -69,9 +69,9 @@ class LatestNNRecommender(object):
             dist = h_item[latest_item_batch] @ h_item.t()
 
             # exclude items that are already interacted
-            # for i, u in enumerate(user_batch.tolist()):
-            #     interacted_items = full_graph.successors(u, etype=self.user_to_item_etype)
-            #     dist[i, interacted_items] = -np.inf
+            for i, u in enumerate(user_batch.tolist()):
+                interacted_items = full_graph.successors(u, etype=self.user_to_item_etype)
+                dist[i, interacted_items] = -np.inf
 
             # find the top K items (columnwise) and return the indices
             recommended_batches.append(dist.topk(K, 1)[1])
@@ -196,7 +196,19 @@ def evaluate(dataset, h_item, k, batch_size, use_test_set=False):
         hr = hits(recommendations, val_matrix)
         pr = precision(recommendations, val_matrix)
         rc = recall(recommendations, val_matrix)
-    return hr, pr, rc
+    return hr, pr, rc, recommendations
+
+def node_to_item(nodes, id_dict, cateogry_dict):
+    """Transforms and returns node IDs to real item IDs.
+
+    Args:
+        items (): node id list
+        id_dict (dict): {node id: item category id}
+        category_dict (dict): {item category id: real item id}
+    """
+    ids = [id_dict[i] for i in nodes]
+    ids = [cateogry_dict[i] for i in ids]   
+    return ids
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

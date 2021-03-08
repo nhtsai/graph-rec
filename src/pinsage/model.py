@@ -154,7 +154,7 @@ def train(dataset, model_cfg):
     # load existing model if exists
     if model_cfg['existing-model'] is not None:
         state = torch.load(
-            os.path.join(model_cfg['model-dir'], model_cfg['existing-model']), 
+            os.path.join(model_cfg['model-dir'], model_cfg['existing-model']),
             map_location=device
         )
         model.load_state_dict(state['model_state_dict'])
@@ -213,12 +213,13 @@ def train(dataset, model_cfg):
             h_item = torch.cat(h_item_batches, 0) # item node embeddings
 
             # calculate model evaluation metrics
-            hit, precision, recall = evaluation.evaluate(
+            hit, precision, recall, _ = evaluation.evaluate(
                 dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
 
             epoch_loss = np.mean(np.array(batch_losses))
             # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
-            print("Evaluation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(epoch_loss, model_cfg['k'], hit, precision, recall))
+            print("Validation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
+                epoch_loss, model_cfg['k'], hit, precision, recall))
 
     # save model
     model_dir = "../../data"
@@ -234,9 +235,19 @@ def train(dataset, model_cfg):
     }
     torch.save(state, os.path.join(model_dir, model_fn))
 
-    return
-    # return model, opt, h_item
+    return h_item
 
+def test(dataset, model_cfg, item_embeddings):
+    """Evaluates item embeddings on the test set of interactions.
+    Saves item recommendations to a pickle file.
+    """
+    hit, precision, recall, recommendations = evaluate(
+        dataset, item_embeddings, model_cfg['k'], model_cfg['batch_size'], use_test_set=True)
+    print("Validation: hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
+        model_cfg['k'], hit, precision, recall))
+    with open(os.path.join(model_cfg['model-dir'], model_cfg['name'] + "_rec.pkl")) as fp:
+        pickle.dump(recommendations, fp)
+    return recommendations
 
 if __name__ == '__main__':
     # Arguments
@@ -269,5 +280,8 @@ if __name__ == '__main__':
     with open(os.path.join(config_dir, config_fn)) as fh:
         model_config = json.load(fh)
 
-    print("Training model...")
-    train(dataset, model_config)
+    print("Training model embeddings...")
+    item_embeddings = train(dataset, model_config)
+
+    print("Testing model embeddings...")
+    test(dataset, model_config, item_embeddings)
