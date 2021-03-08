@@ -60,7 +60,7 @@ class LatestNNRecommender(object):
         # process recommendations for each batch
         recommended_batches = []
         user_batches = torch.arange(n_users).split(self.batch_size)
-        for user_batch in user_batches:
+        for user_batch in tqdm(user_batches):
 
             # get the latest items for all users in the batch
             latest_item_batch = latest_items[user_batch].to(device=h_item.device)
@@ -69,7 +69,7 @@ class LatestNNRecommender(object):
             dist = h_item[latest_item_batch] @ h_item.t()
 
             # exclude items that are already interacted
-            for i, u in enumerate(tqdm(user_batch.tolist())):
+            for i, u in enumerate(user_batch.tolist()):
                 interacted_items = full_graph.successors(u, etype=self.user_to_item_etype)
                 dist[i, interacted_items] = -np.inf
 
