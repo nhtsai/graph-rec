@@ -5,14 +5,15 @@
 	"num-random-walks": 10,
 	"num-neighbors": 3,
 	"num-layers": 2,
-	"hidden-dims": 256,
-	"batch-size": 128,
-	"num-epochs": 10,
-	"batches-per-epoch": 5000,
+	"hidden-dims": 128,
+	"batch-size": 64,
+	"num-epochs": 100,
+	"batches-per-epoch": 512,
 	"num-workers": 2,
 	"lr": 3e-4,
 	"k": 10,
 	"model-dir": "../../data",
 	"existing-model": null,
-	"id_as_features": false
+	"id_as_features": false,
+	"save-freq": 50
 }

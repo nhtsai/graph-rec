@@ -152,7 +152,7 @@ def train(dataset, model_cfg):
     # Model
     model = PinSAGEModel(g, item_ntype, textset, model_cfg['hidden-dims'], model_cfg['num-layers']).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=model_cfg['lr'])
-    start_epoch = 0
+    start_epoch = 1
 
     # load existing model if exists
     if model_cfg['existing-model'] is not None:
@@ -224,12 +224,14 @@ def train(dataset, model_cfg):
             print("Validation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
                 epoch_loss, model_cfg['k'], hit, precision, recall))
 
-        if epoch_id > 0 and epoch_id+1 % 25 == 0:
+        # 
+        if (epoch_id + 1 == model_cfg['num-epochs'] + start_epoch) or \
+            epoch_id % model_cfg['save-freq'] == 0:
             # save model every 25 epochs
             model_dir = "../../data"
-            model_fn = "{}_model_{}.pth".format(model_cfg['name'], epoch_id+1)
+            model_fn = "{}_model_{}.pth".format(model_cfg['name'], epoch_id)
             state = {
-                'epoch': epoch_id+1,
+                'epoch': epoch_id,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': opt.state_dict(),
                 'loss': epoch_loss,
