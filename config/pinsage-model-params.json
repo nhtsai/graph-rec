@@ -15,5 +15,6 @@
 	"model-dir": "../../data",
 	"existing-model": null,
 	"id_as_features": false,
+	"eval-freq": 50,
 	"save-freq": 50
 }

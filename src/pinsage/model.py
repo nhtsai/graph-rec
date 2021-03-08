@@ -166,7 +166,6 @@ def train(dataset, model_cfg):
 
     # For each batch of head-tail-negative triplets...
     for epoch_id in range(start_epoch, model_cfg['num-epochs'] + start_epoch):
-
         batch_losses = []
         # Train
         model.train()
@@ -198,33 +197,34 @@ def train(dataset, model_cfg):
                 # print("Training: epoch: {}, batch: {}, loss: {:.4f}".format(epoch_id, batch_id, loss))
                 t.set_postfix(epoch=epoch_id, batch=batch_id, loss=loss.item())
 
-        # Evaluate validation set after training epoch
-        model.eval()
-        with torch.no_grad():
-            # item batches are groups of node numbers
-            item_batches = torch.arange(g.number_of_nodes(item_ntype)).split(model_cfg['batch-size'])
-            h_item_batches = []
-            # use test dataloader to get sampled neighbors
-            for blocks in dataloader_test:
-                # move blocks to GPU
-                for i in range(len(blocks)):
-                    blocks[i] = blocks[i].to(device)
-                # get embedding of blocks
-                h_item_batches.append(model.get_repr(blocks))
+        # evaluate model on validation set at specified frequency
+        if epoch_id % model_cfg['eval-freq'] == 0:
+            model.eval()
+            with torch.no_grad():
+                # item batches are groups of node numbers
+                item_batches = torch.arange(g.number_of_nodes(item_ntype)).split(model_cfg['batch-size'])
+                h_item_batches = []
+                # use test dataloader to get sampled neighbors
+                for blocks in dataloader_test:
+                    # move blocks to GPU
+                    for i in range(len(blocks)):
+                        blocks[i] = blocks[i].to(device)
+                    # get embedding of blocks
+                    h_item_batches.append(model.get_repr(blocks))
 
-            # concatenate all embeddings of the batch
-            h_item = torch.cat(h_item_batches, 0) # item node embeddings
+                # concatenate all embeddings of the batch
+                h_item = torch.cat(h_item_batches, 0) # item node embeddings
 
-            # calculate model evaluation metrics
-            hit, precision, recall, _ = evaluation.evaluate(
-                dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
+                # calculate model evaluation metrics
+                hit, precision, recall, _ = evaluation.evaluate(
+                    dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
 
-            epoch_loss = np.mean(np.array(batch_losses))
-            # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
-            print("Validation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
-                epoch_loss, model_cfg['k'], hit, precision, recall))
+                epoch_loss = np.mean(np.array(batch_losses))
+                # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
+                print("Validation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
+                    epoch_loss, model_cfg['k'], hit, precision, recall))
 
-        # 
+        # save model at specified freq or at end of training
         if (epoch_id + 1 == model_cfg['num-epochs'] + start_epoch) or \
             epoch_id % model_cfg['save-freq'] == 0:
             # save model every 25 epochs
