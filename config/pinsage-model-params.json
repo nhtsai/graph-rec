@@ -13,5 +13,6 @@
 	"lr": 3e-5,
 	"k": 500,
 	"model-dir": "../../data",
-	"existing-model": null
+	"existing-model": null,
+	"id_as_features": true
 }

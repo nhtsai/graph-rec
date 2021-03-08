@@ -90,8 +90,11 @@ def train(dataset, model_cfg):
 
     # Assign user and item IDs and use them as features
     # to learn an individual trainable embedding for each entity
-    g.nodes[user_ntype].data['id'] = torch.arange(g.number_of_nodes(user_ntype))
-    g.nodes[item_ntype].data['id'] = torch.arange(g.number_of_nodes(item_ntype))
+    # Note: using ID's as learnable features makes the model transductive,
+    #       remove to make model inductive
+    if model_cfg['id_as_features']:
+        g.nodes[user_ntype].data['id'] = torch.arange(g.number_of_nodes(user_ntype))
+        g.nodes[item_ntype].data['id'] = torch.arange(g.number_of_nodes(item_ntype))
 
     # Text Features
 
