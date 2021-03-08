@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import torch
 import dgl
-
+from tqdm import tqdm
 
 class LatestNNRecommender(object):
     """
@@ -69,7 +69,7 @@ class LatestNNRecommender(object):
             dist = h_item[latest_item_batch] @ h_item.t()
 
             # exclude items that are already interacted
-            for i, u in enumerate(user_batch.tolist()):
+            for i, u in enumerate(tqdm(user_batch.tolist())):
                 interacted_items = full_graph.successors(u, etype=self.user_to_item_etype)
                 dist[i, interacted_items] = -np.inf
 
@@ -160,7 +160,7 @@ def recall(recommendations, ground_truth):
     rec = np.mean(relevance.sum(axis=1) / ground_truth.sum(axis=1))
     return rec
 
-def evaluate(dataset, h_item, k, batch_size, use_test_set=False):
+def evaluate(dataset, h_item, k, batch_size, use_test_set=False, use_full_graph=False):
     """Evaluates and returns evaluation metrics using the LatestNNRecommender class.
 
     Args:
@@ -173,8 +173,10 @@ def evaluate(dataset, h_item, k, batch_size, use_test_set=False):
     Returns:
         HITS, average precision, and average recall metrics on the validation or test dataset
     """
-    # g = dataset['train-graph']
-    g = dataset['full-graph']
+    if use_full_graph:
+        g = dataset['full-graph']
+    else:
+        g = dataset['train-graph']
     val_matrix = dataset['val-matrix'].tocsr()
     test_matrix = dataset['test-matrix'].tocsr()
     user_ntype = dataset['user-type']
