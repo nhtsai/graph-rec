@@ -241,7 +241,7 @@ def test(dataset, model_cfg, item_embeddings):
     """Evaluates item embeddings on the test set of interactions.
     Saves item recommendations to a pickle file.
     """
-    hit, precision, recall, recommendations = evaluate(
+    hit, precision, recall, recommendations = evaluation.evaluate(
         dataset, item_embeddings, model_cfg['k'], model_cfg['batch_size'], use_test_set=True)
     print("Validation: hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
         model_cfg['k'], hit, precision, recall))
