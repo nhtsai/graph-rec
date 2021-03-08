@@ -69,9 +69,9 @@ class LatestNNRecommender(object):
             dist = h_item[latest_item_batch] @ h_item.t()
 
             # exclude items that are already interacted
-            # for i, u in enumerate(user_batch.tolist()):
-            #     interacted_items = full_graph.successors(u, etype=self.user_to_item_etype)
-            #     dist[i, interacted_items] = -np.inf
+            for i, u in enumerate(user_batch.tolist()):
+                interacted_items = full_graph.successors(u, etype=self.user_to_item_etype)
+                dist[i, interacted_items] = -np.inf
 
             # find the top K items (columnwise) and return the indices
             recommended_batches.append(dist.topk(K, 1)[1])

@@ -224,19 +224,20 @@ def train(dataset, model_cfg):
             print("Validation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
                 epoch_loss, model_cfg['k'], hit, precision, recall))
 
-    # save model
-    model_dir = "../../data"
-    model_fn = "{}_model_{}.pth".format(model_cfg['name'], epoch_id)
-    state = {
-        'epoch': epoch_id+1,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': opt.state_dict(),
-        'loss': epoch_loss,
-        'item_embeddings': h_item,
-        'k': model_cfg['k'],
-        'batch_size': model_cfg['batch-size']
-    }
-    torch.save(state, os.path.join(model_dir, model_fn))
+        if epoch_id > 0 and epoch_id+1 % 25 == 0:
+            # save model every 25 epochs
+            model_dir = "../../data"
+            model_fn = "{}_model_{}.pth".format(model_cfg['name'], epoch_id+1)
+            state = {
+                'epoch': epoch_id+1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': opt.state_dict(),
+                'loss': epoch_loss,
+                'item_embeddings': h_item,
+                'k': model_cfg['k'],
+                'batch_size': model_cfg['batch-size']
+            }
+            torch.save(state, os.path.join(model_dir, model_fn))
 
     return h_item
 
