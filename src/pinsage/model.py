@@ -266,10 +266,10 @@ def train(dataset, model_cfg):
             }
             torch.save(state, os.path.join(model_dir, model_fn))
 
-    return h_item
+    return h_item, epoch_id
 
 
-def test(dataset, model_cfg, item_embeddings, use_full_graph=False):
+def test(dataset, model_cfg, item_embeddings, epoch_id=None, use_full_graph=False):
     """Evaluates item embeddings on the test set of interactions.
         Saves item recommendations to a pickle file.
 
@@ -292,7 +292,11 @@ def test(dataset, model_cfg, item_embeddings, use_full_graph=False):
         model_cfg['k'], hit, precision, recall))
 
     # save recommendations
-    with open(os.path.join(model_cfg['model-dir'], model_cfg['name'] + "_results.pkl"), 'wb') as fp:
+    if epoch_id is not None:
+        output_fn = model_cfg['name'] + "_results_{}.pkl".format(epoch_id)
+    else:
+        output_fn = model_cfg['name'] + "_results.pkl"
+    with open(os.path.join(model_cfg['model-dir'], output_fn), 'wb') as fp:
         results = {
             "hit": hit,
             "k": model_cfg['k'],
@@ -336,6 +340,6 @@ if __name__ == '__main__':
     with open(os.path.join(config_dir, config_fn)) as fh:
         model_config = json.load(fh)
 
-    item_embeddings = train(dataset, model_config)
+    item_embeddings, epoch_id = train(dataset, model_config)
 
-    test(dataset, model_config, item_embeddings)
+    test(dataset, model_config, item_embeddings, epoch_id=epoch_id)
