@@ -221,7 +221,8 @@ def train(dataset, model_cfg):
         epoch_loss = np.mean(np.array(batch_losses))
 
         # evaluate model on validation set at specified frequency
-        if epoch_id % model_cfg['eval-freq'] == 0:
+        if (epoch_id + 1 == model_cfg['num-epochs'] + start_epoch) or \
+            epoch_id % model_cfg['eval-freq'] == 0:
             print("Evaluating model...")
             model.eval()
             with torch.no_grad():
