@@ -251,9 +251,9 @@ def train(dataset, model_cfg):
         # save model at specified freq or at end of training
         if (epoch_id + 1 == model_cfg['num-epochs'] + start_epoch) or \
                 epoch_id % model_cfg['save-freq'] == 0:
-            print("Saving model...")
             model_dir = "../../data"
             model_fn = "{}_model_{}.pth".format(model_cfg['name'], epoch_id)
+            print("Saving model: {}...".format(model_fn))
             state = {
                 'epoch': epoch_id,
                 'model_state_dict': model.state_dict(),
