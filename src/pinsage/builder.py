@@ -62,15 +62,14 @@ class PandasGraphBuilder(object):
     4
     """
     def __init__(self):
-        self.entity_tables = {}
-        self.relation_tables = {}
-
+        self.entity_tables = {}          # mapping from entity name to entity pd.DataFrame
+        self.relation_tables = {}        # mapping from relation name to relation pd.DataFrame
         self.entity_pk_to_name = {}      # mapping from primary key name to entity name
         self.entity_pk = {}              # mapping from entity name to primary key
-        self.entity_key_map = {}         # mapping from entity names to primary key values
-        self.num_nodes_per_type = {}
-        self.edges_per_relation = {}
-        self.relation_name_to_etype = {}
+        self.entity_key_map = {}         # mapping from entity names to primary key values pd.Series
+        self.num_nodes_per_type = {}     # number of nodes per entity type
+        self.edges_per_relation = {}     # mapping from (UEV) edge tuple to (src entity id, dst entity id)
+        self.relation_name_to_etype = {} # mapping from relation name to (src entity, relation name, dst entity)
         self.relation_src_key = {}       # mapping from relation name to source key
         self.relation_dst_key = {}       # mapping from relation name to destination key
 
