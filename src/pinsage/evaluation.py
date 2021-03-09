@@ -209,7 +209,7 @@ def node_to_item(nodes, id_dict, cateogry_dict):
         category_dict (dict): {item category id: real item id}
     """
     ids = [id_dict[i] for i in nodes]
-    ids = [cateogry_dict[i] for i in ids]   
+    ids = [cateogry_dict[i] for i in ids]
     return ids
 
 if __name__ == '__main__':

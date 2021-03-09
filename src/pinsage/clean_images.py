@@ -14,7 +14,6 @@ def read_image_features(path):
         a = array.array('f')
         a.fromfile(f, 4096)
         yield asin, a.tolist()
-        
 
 def filter_image_features(data_dir, image_fn, product_list_fn, out_fn):
     image_features_path = os.path.join(data_dir, image_fn)

@@ -4,7 +4,6 @@ file a heterogeneous graph with categorical and numeric features.
 """
 
 # built-in imports
-import sys
 import os
 import gzip
 import pickle
@@ -18,7 +17,7 @@ import torch
 # local imports
 # sys.path.insert(0, './src/pinsage')
 from builder import PandasGraphBuilder
-from data_utils import *
+from data_utils import train_test_split_by_time, build_train_graph, build_val_test_matrix
 
 
 def parse(path):
@@ -128,7 +127,7 @@ def main(data_cfg):
     # filter products with both reviews and images
     products = products.copy()[products['asin'].isin(distinct_products_all)]
     # median impute product prices
-    median_price = np.round(products['price'].astype(float).median(), 2)
+    median_price = products['price'].astype(float).median()
     products['price'] = products['price'].astype(float).fillna(median_price)
     products['price'] = (100 * products['price']).astype(int) # convert float price to int feature
 

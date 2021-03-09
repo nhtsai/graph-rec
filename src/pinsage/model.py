@@ -1,12 +1,14 @@
+"""Main Pinsage model and train/test code.
+Assumes data preprocessing file has been run beforehand.
+"""
+
 # built-in imports
 import pickle
-import argparse
 import os
 import json
 
 # third-party imports
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -18,8 +20,10 @@ import layers
 import sampler as sampler_module
 import evaluation
 
+
 class PinSAGEModel(nn.Module):
     """Wrapper class for the PinSAGE model."""
+
     def __init__(self, full_graph, ntype, textset, hidden_dims, n_layers):
         """Constructor of PinSAGE model class.
 
@@ -32,7 +36,8 @@ class PinSAGEModel(nn.Module):
         """
         super().__init__()
 
-        self.proj = layers.LinearProjector(full_graph, ntype, textset, hidden_dims)
+        self.proj = layers.LinearProjector(
+            full_graph, ntype, textset, hidden_dims)
         self.sage = layers.SAGENet(hidden_dims, n_layers)
         self.scorer = layers.ItemToItemScorer(full_graph, ntype)
 
@@ -56,7 +61,8 @@ class PinSAGEModel(nn.Module):
         """Returns the embedded representation given block made from sampling neighboring nodes."""
         # project features
         h_item = self.proj(blocks[0].srcdata)
-        h_item_dst = self.proj(blocks[-1].dstdata) # node's own learnable embedding
+        # node's own learnable embedding
+        h_item_dst = self.proj(blocks[-1].dstdata)
 
         # embedding + GNN output
         return h_item_dst + self.sage(blocks, h_item)
@@ -72,15 +78,18 @@ def train(dataset, model_cfg):
     Returns:
         A trained PinSAGE model.
     """
-    g = dataset['train-graph'] # training graph
-    val_matrix = dataset['val-matrix'].tocsr() # compressed sparse row validation matrix
-    test_matrix = dataset['test-matrix'].tocsr() # compressed sparse row test matrix
-    item_texts = dataset['item-texts'] # item text features
-    # imgset = dataset['item-images'] # item image features
-    user_ntype = dataset['user-type'] # user node
-    item_ntype = dataset['item-type'] # item node
-    user_to_item_etype = dataset['user-to-item-type'] # user-item directed edge
-    timestamp = dataset['timestamp-edge-column'] # timestamp column
+    g = dataset['train-graph']  # training graph
+    # compressed sparse row validation matrix
+    val_matrix = dataset['val-matrix'].tocsr()
+    # compressed sparse row test matrix
+    test_matrix = dataset['test-matrix'].tocsr()
+    item_texts = dataset['item-texts']  # item text features
+    # imgset = dataset['item-images']  # item image features
+    user_ntype = dataset['user-type']  # user node
+    item_ntype = dataset['item-type']  # item node
+    # user-item directed edge
+    user_to_item_etype = dataset['user-to-item-type']
+    timestamp = dataset['timestamp-edge-column']  # timestamp column
 
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -96,8 +105,10 @@ def train(dataset, model_cfg):
     # Note: using ID's as learnable features makes the model transductive,
     #       remove to make model inductive
     if model_cfg['id_as_features']:
-        g.nodes[user_ntype].data['id'] = torch.arange(g.number_of_nodes(user_ntype))
-        g.nodes[item_ntype].data['id'] = torch.arange(g.number_of_nodes(item_ntype))
+        g.nodes[user_ntype].data['id'] = torch.arange(
+            g.number_of_nodes(user_ntype))
+        g.nodes[item_ntype].data['id'] = torch.arange(
+            g.number_of_nodes(item_ntype))
 
     # Text Features
 
@@ -108,7 +119,8 @@ def train(dataset, model_cfg):
         fields = {}
         examples = []
         for key, texts in item_texts.items():
-            fields[key] = torchtext.data.Field(include_lengths=True, lower=True, batch_first=True)
+            fields[key] = torchtext.data.Field(
+                include_lengths=True, lower=True, batch_first=True)
         for i in range(g.number_of_nodes(item_ntype)):
             example = torchtext.data.Example.fromlist(
                 [item_texts[key][i] for key in item_texts.keys()],
@@ -118,7 +130,7 @@ def train(dataset, model_cfg):
         textset = torchtext.data.Dataset(examples, fields)
         for key, field in fields.items():
             field.build_vocab(getattr(textset, key))
-            #field.build_vocab(getattr(textset, key), vectors='fasttext.simple.300d') # use fasttext
+            # field.build_vocab(getattr(textset, key), vectors='fasttext.simple.300d') # use fasttext
 
     # Image Features
     # g.nodes[item_ntype].data['image'] = torch.FloatTensor(item_images['image'])
@@ -134,7 +146,8 @@ def train(dataset, model_cfg):
         model_cfg['num-random-walks'], model_cfg['num-neighbors'], model_cfg['num-layers'])
 
     # Collator
-    collator = sampler_module.PinSAGECollator(neighbor_sampler, g, item_ntype, textset)
+    collator = sampler_module.PinSAGECollator(
+        neighbor_sampler, g, item_ntype, textset)
 
     # Training Data Loader
     dataloader = DataLoader(
@@ -153,13 +166,15 @@ def train(dataset, model_cfg):
     dataloader_it = iter(dataloader)
 
     # Model
-    model = PinSAGEModel(g, item_ntype, textset, model_cfg['hidden-dims'], model_cfg['num-layers']).to(device)
+    model = PinSAGEModel(g, item_ntype, textset,
+                         model_cfg['hidden-dims'], model_cfg['num-layers']).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=model_cfg['lr'])
     start_epoch = 1
 
     # load existing model if exists
     if model_cfg['existing-model'] is not None:
-        print("Loading existing model: {}...".format(model_cfg['existing-model']))
+        print("Loading existing model: {}...".format(
+            model_cfg['existing-model']))
         state = torch.load(
             os.path.join(model_cfg['model-dir'], model_cfg['existing-model']),
             map_location=device
@@ -174,6 +189,7 @@ def train(dataset, model_cfg):
         # Train
         model.train()
         with tqdm(range(model_cfg['batches-per-epoch'])) as t:
+            t.set_description("Training (epoch {})".format(epoch_id))
             for batch_id in t:
 
                 # get next batch of training data
@@ -199,14 +215,40 @@ def train(dataset, model_cfg):
                 opt.step()
 
                 # print("Training: epoch: {}, batch: {}, loss: {:.4f}".format(epoch_id, batch_id, loss))
-                t.set_postfix(epoch=epoch_id, batch=batch_id, loss=loss.item())
+                t.set_postfix(batch=batch_id, loss=loss.item())
 
         epoch_loss = np.mean(np.array(batch_losses))
 
+        # evaluate model on validation set at specified frequency
+        if epoch_id % model_cfg['eval-freq'] == 0:
+            model.eval()
+            with torch.no_grad():
+                # item batches are groups of node numbers
+                item_batches = torch.arange(g.number_of_nodes(
+                    item_ntype)).split(model_cfg['batch-size'])
+                h_item_batches = []
+                # use test dataloader to get sampled neighbors
+                for blocks in dataloader_test:
+                    # move blocks to GPU
+                    for i in range(len(blocks)):
+                        blocks[i] = blocks[i].to(device)
+                    # get embedding of blocks
+                    h_item_batches.append(model.get_repr(blocks))
+
+                # concatenate all embeddings of the batch
+                h_item = torch.cat(h_item_batches, 0)  # item node embeddings
+
+                # calculate model evaluation metrics
+                hit, precision, recall, _ = evaluation.evaluate(
+                    dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
+
+                # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
+                print("Validation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
+                    epoch_loss, model_cfg['k'], hit, precision, recall))
+
         # save model at specified freq or at end of training
         if (epoch_id + 1 == model_cfg['num-epochs'] + start_epoch) or \
-            epoch_id % model_cfg['save-freq'] == 0:
-            # save model every 25 epochs
+                epoch_id % model_cfg['save-freq'] == 0:
             model_dir = "../../data"
             model_fn = "{}_model_{}.pth".format(model_cfg['name'], epoch_id)
             state = {
@@ -220,33 +262,8 @@ def train(dataset, model_cfg):
             }
             torch.save(state, os.path.join(model_dir, model_fn))
 
-        # evaluate model on validation set at specified frequency
-        if epoch_id % model_cfg['eval-freq'] == 0:
-            model.eval()
-            with torch.no_grad():
-                # item batches are groups of node numbers
-                item_batches = torch.arange(g.number_of_nodes(item_ntype)).split(model_cfg['batch-size'])
-                h_item_batches = []
-                # use test dataloader to get sampled neighbors
-                for blocks in dataloader_test:
-                    # move blocks to GPU
-                    for i in range(len(blocks)):
-                        blocks[i] = blocks[i].to(device)
-                    # get embedding of blocks
-                    h_item_batches.append(model.get_repr(blocks))
-
-                # concatenate all embeddings of the batch
-                h_item = torch.cat(h_item_batches, 0) # item node embeddings
-
-                # calculate model evaluation metrics
-                hit, precision, recall, _ = evaluation.evaluate(
-                    dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
-
-                # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
-                print("Validation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
-                    epoch_loss, model_cfg['k'], hit, precision, recall))
-
     return h_item
+
 
 def test(dataset, model_cfg, item_embeddings, use_full_graph=False):
     """Evaluates item embeddings on the test set of interactions.
@@ -282,6 +299,7 @@ def test(dataset, model_cfg, item_embeddings, use_full_graph=False):
         pickle.dump(results, fp)
 
     return recommendations
+
 
 if __name__ == '__main__':
     # Arguments
