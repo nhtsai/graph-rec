@@ -86,9 +86,9 @@ def main(data_cfg):
     reviews_fn = data_cfg['reviews-fn']
     metadata_fn = data_cfg['metadata-fn']
     image_fn = data_cfg['image-fn']
-    product_out_fn = data_cfg['product-out-fn']
-    user_out_fn = data_cfg['user-out-fn']
-    image_out_fn = data_cfg['image-out-fn']
+    # product_out_fn = data_cfg['product-out-fn']
+    # user_out_fn = data_cfg['user-out-fn']
+    # image_out_fn = data_cfg['image-out-fn']
     data_out_fn = data_cfg['data-out-fn']
 
     ### REVIEWS ###
@@ -113,11 +113,7 @@ def main(data_cfg):
     #     print("Saving image dictionary dataset...")
     #     pickle.dump(img_dict, fp)
 
-    # save distinct product list
     distinct_products_all = img_dict.keys()
-    with open(os.path.join(data_dir, product_out_fn), 'wb') as fp:
-        print("Saving product list...")
-        pickle.dump(list(distinct_products_all), fp)
 
     ### PRODUCTS ###
     print("Processing product metadata...")
@@ -131,19 +127,14 @@ def main(data_cfg):
 
     # filter products with both reviews and images
     products = products.copy()[products['asin'].isin(distinct_products_all)]
-    # mean impute product prices
-    mean_price = np.round(products['price'].mean(), 2)
-    products['price'] = products['price'].fillna(mean_price)
-    products['price'] = (100 * products['price']).astype(int)
+    # median impute product prices
+    mean_price = np.round(products['price'].astype(float).median(), 2)
+    products['price'] = products['price'].astype(float).fillna(mean_price)
+    products['price'] = (100 * products['price']).astype(int) # convert float price to int feature
 
     ### USERS ###
     print("Processing users...")
     users = reviews[['reviewerID']].drop_duplicates()
-
-    # save distinct user list
-    with open(os.path.join(data_dir, user_out_fn), 'wb') as fp:
-        print("Saving user list...")
-        pickle.dump(users['reviewerID'].values, fp)
 
     ### EVENTS ###
     print("Processing interaction events...")
@@ -162,8 +153,9 @@ def main(data_cfg):
     print("Adding features to graph...")
     # add product features
     g.nodes['product'].data['price'] = torch.LongTensor(products['price'].values)
-    g.nodes['product'].data['image'] = \
-        torch.FloatTensor([img_dict[i] for i in products['asin'].values])
+    if data_cfg['include-images']:
+        g.nodes['product'].data['image'] = \
+            torch.FloatTensor([img_dict[i] for i in products['asin'].values])
     # add edge features
     g.edges['reviewed'].data['rating'] = torch.FloatTensor(events['overall'].values)
     g.edges['reviewed'].data['helpful'] = torch.FloatTensor(events['helpful'].values)
@@ -195,7 +187,10 @@ def main(data_cfg):
         'val-matrix': val_matrix,
         'test-matrix': test_matrix,
         'item-texts': {'title': products['title'].values.astype(str)},
-        # 'item-images': img_dict,
+        'item-images': None,
+        'user-list': users['reviewerID'].values,
+        'product-list': products['asin'].values,
+        'image-urls': products['imUrl'].values,
         'user-type': 'user',
         'item-type': 'product',
         'user-to-item-type': 'reviewed',
@@ -206,7 +201,7 @@ def main(data_cfg):
     with open(output_path, 'wb') as f:
         print("Saving processed dataset...")
         pickle.dump(dataset, f)
-    
+
     return dataset
 
 if __name__ == "__main__":
