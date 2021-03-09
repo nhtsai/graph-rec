@@ -1,3 +1,5 @@
+"""Evaluation modules for the PinSAGE model item embeddings."""
+
 import pickle
 import argparse
 import numpy as np
@@ -60,7 +62,7 @@ class LatestNNRecommender(object):
         # process recommendations for each batch
         recommended_batches = []
         user_batches = torch.arange(n_users).split(self.batch_size)
-        for user_batch in tqdm(user_batches):
+        for user_batch in tqdm(user_batches, desc="Generating recommendations"):
 
             # get the latest items for all users in the batch
             latest_item_batch = latest_items[user_batch].to(device=h_item.device)
@@ -190,6 +192,7 @@ def evaluate(dataset, h_item, k, batch_size, use_test_set=False, use_full_graph=
     # get k recommendations using embeddings
     recommendations = rec_engine.recommend(g, k, None, h_item).cpu().numpy()
 
+    print("Calculating evaluation metrics...")
     if use_test_set:
         hr = hits(recommendations, test_matrix)
         pr = precision(recommendations, test_matrix)
@@ -200,17 +203,17 @@ def evaluate(dataset, h_item, k, batch_size, use_test_set=False, use_full_graph=
         rc = recall(recommendations, val_matrix)
     return hr, pr, rc, recommendations
 
-def node_to_item(nodes, id_dict, cateogry_dict):
-    """Transforms and returns node IDs to real item IDs.
+# def node_to_item(nodes, id_dict, category_dict):
+#     """Transforms and returns node IDs to real item IDs.
 
-    Args:
-        items (): node id list
-        id_dict (dict): {node id: item category id}
-        category_dict (dict): {item category id: real item id}
-    """
-    ids = [id_dict[i] for i in nodes]
-    ids = [cateogry_dict[i] for i in ids]
-    return ids
+#     Args:
+#         items (): node id list
+#         id_dict (dict): {node id: item category id}
+#         category_dict (dict): {item category id: real item id}
+#     """
+#     ids = [id_dict[i] for i in nodes]
+#     ids = [category_dict[i] for i in ids]
+#     return ids
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

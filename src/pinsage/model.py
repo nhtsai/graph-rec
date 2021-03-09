@@ -215,7 +215,6 @@ def train(dataset, model_cfg):
                 # Adjust model weights
                 opt.step()
 
-                # print("Training: epoch: {}, batch: {}, loss: {:.4f}".format(epoch_id, batch_id, loss))
                 t.set_postfix(batch=batch_id, loss=loss.item())
 
         epoch_loss = np.mean(np.array(batch_losses))
@@ -246,13 +245,13 @@ def train(dataset, model_cfg):
                     dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
 
                 # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
-                print("Validation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
-                    epoch_loss, model_cfg['k'], hit, precision, recall))
+                print("Validation (epoch {}): loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
+                    epoch_id, epoch_loss, model_cfg['k'], hit, precision, recall))
 
         # save model at specified freq or at end of training
-        print("Saving model...")
         if (epoch_id + 1 == model_cfg['num-epochs'] + start_epoch) or \
                 epoch_id % model_cfg['save-freq'] == 0:
+            print("Saving model...")
             model_dir = "../../data"
             model_fn = "{}_model_{}.pth".format(model_cfg['name'], epoch_id)
             state = {
