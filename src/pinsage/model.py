@@ -198,6 +198,25 @@ def train(dataset, model_cfg):
                 # print("Training: epoch: {}, batch: {}, loss: {:.4f}".format(epoch_id, batch_id, loss))
                 t.set_postfix(epoch=epoch_id, batch=batch_id, loss=loss.item())
 
+        epoch_loss = np.mean(np.array(batch_losses))
+
+        # save model at specified freq or at end of training
+        if (epoch_id + 1 == model_cfg['num-epochs'] + start_epoch) or \
+            epoch_id % model_cfg['save-freq'] == 0:
+            # save model every 25 epochs
+            model_dir = "../../data"
+            model_fn = "{}_model_{}.pth".format(model_cfg['name'], epoch_id)
+            state = {
+                'epoch': epoch_id,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': opt.state_dict(),
+                'loss': epoch_loss,
+                'item_embeddings': h_item,
+                'k': model_cfg['k'],
+                'batch_size': model_cfg['batch-size']
+            }
+            torch.save(state, os.path.join(model_dir, model_fn))
+
         # evaluate model on validation set at specified frequency
         if epoch_id % model_cfg['eval-freq'] == 0:
             model.eval()
@@ -220,27 +239,9 @@ def train(dataset, model_cfg):
                 hit, precision, recall, _ = evaluation.evaluate(
                     dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
 
-                epoch_loss = np.mean(np.array(batch_losses))
                 # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
                 print("Validation: loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
                     epoch_loss, model_cfg['k'], hit, precision, recall))
-
-        # save model at specified freq or at end of training
-        if (epoch_id + 1 == model_cfg['num-epochs'] + start_epoch) or \
-            epoch_id % model_cfg['save-freq'] == 0:
-            # save model every 25 epochs
-            model_dir = "../../data"
-            model_fn = "{}_model_{}.pth".format(model_cfg['name'], epoch_id)
-            state = {
-                'epoch': epoch_id,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': opt.state_dict(),
-                'loss': epoch_loss,
-                'item_embeddings': h_item,
-                'k': model_cfg['k'],
-                'batch_size': model_cfg['batch-size']
-            }
-            torch.save(state, os.path.join(model_dir, model_fn))
 
     return h_item
 
