@@ -156,6 +156,7 @@ def main(data_cfg):
     if data_cfg['include-images']:
         g.nodes['product'].data['image'] = \
             torch.FloatTensor([img_dict[i] for i in products['asin'].values])
+
     # add edge features
     g.edges['reviewed'].data['rating'] = torch.FloatTensor(events['overall'].values)
     g.edges['reviewed'].data['helpful'] = torch.FloatTensor(events['helpful'].values)

@@ -54,9 +54,12 @@ class PinSAGEModel(nn.Module):
 
     def get_repr(self, blocks):
         """Returns the embedded representation given block made from sampling neighboring nodes."""
+        # project features
         h_item = self.proj(blocks[0].srcdata)
         h_item_dst = self.proj(blocks[-1].dstdata) # node's own learnable embedding
-        return h_item_dst + self.sage(blocks, h_item) # embedding + GNN output
+
+        # embedding + GNN output
+        return h_item_dst + self.sage(blocks, h_item)
 
 
 def train(dataset, model_cfg):
