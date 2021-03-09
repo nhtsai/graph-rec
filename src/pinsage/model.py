@@ -184,6 +184,7 @@ def train(dataset, model_cfg):
         start_epoch = state['epoch'] + 1
 
     # For each batch of head-tail-negative triplets...
+    print("Training model...")
     for epoch_id in range(start_epoch, model_cfg['num-epochs'] + start_epoch):
         batch_losses = []
         # Train
@@ -221,6 +222,7 @@ def train(dataset, model_cfg):
 
         # evaluate model on validation set at specified frequency
         if epoch_id % model_cfg['eval-freq'] == 0:
+            print("Evaluating model...")
             model.eval()
             with torch.no_grad():
                 # item batches are groups of node numbers
@@ -247,6 +249,7 @@ def train(dataset, model_cfg):
                     epoch_loss, model_cfg['k'], hit, precision, recall))
 
         # save model at specified freq or at end of training
+        print("Saving model...")
         if (epoch_id + 1 == model_cfg['num-epochs'] + start_epoch) or \
                 epoch_id % model_cfg['save-freq'] == 0:
             model_dir = "../../data"
@@ -332,8 +335,6 @@ if __name__ == '__main__':
     with open(os.path.join(config_dir, config_fn)) as fh:
         model_config = json.load(fh)
 
-    print("Training model embeddings...")
     item_embeddings = train(dataset, model_config)
 
-    print("Testing model embeddings...")
     test(dataset, model_config, item_embeddings)
