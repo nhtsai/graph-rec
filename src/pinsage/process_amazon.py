@@ -128,8 +128,8 @@ def main(data_cfg):
     # filter products with both reviews and images
     products = products.copy()[products['asin'].isin(distinct_products_all)]
     # median impute product prices
-    mean_price = np.round(products['price'].astype(float).median(), 2)
-    products['price'] = products['price'].astype(float).fillna(mean_price)
+    median_price = np.round(products['price'].astype(float).median(), 2)
+    products['price'] = products['price'].astype(float).fillna(median_price)
     products['price'] = (100 * products['price']).astype(int) # convert float price to int feature
 
     ### USERS ###
