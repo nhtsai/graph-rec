@@ -339,6 +339,7 @@ if __name__ == '__main__':
     with open(os.path.join(config_dir, config_fn)) as fh:
         model_config = json.load(fh)
 
+    print("Model Config:", model_config)
     item_embeddings, epoch_id = train(dataset, model_config)
 
     test(dataset, model_config, item_embeddings, epoch_id=epoch_id)
