@@ -268,8 +268,15 @@ def test(dataset, model_cfg, item_embeddings, use_full_graph=False):
         model_cfg['k'], hit, precision, recall))
 
     # save recommendations
-    with open(os.path.join(model_cfg['model-dir'], model_cfg['name'] + "_rec.pkl"), 'wb') as fp:
-        pickle.dump(recommendations, fp)
+    with open(os.path.join(model_cfg['model-dir'], model_cfg['name'] + "_results.pkl"), 'wb') as fp:
+        results = {
+            "hit": hit,
+            "k": model_cfg['k'],
+            "precision": precision,
+            "recall": recall,
+            "recommendations": recommendations
+        }
+        pickle.dump(results, fp)
 
     return recommendations
 
