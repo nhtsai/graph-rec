@@ -245,16 +245,32 @@ def train(dataset, model_cfg):
 
     return h_item
 
-def test(dataset, model_cfg, item_embeddings):
+def test(dataset, model_cfg, item_embeddings, use_full_graph=False):
     """Evaluates item embeddings on the test set of interactions.
-    Saves item recommendations to a pickle file.
+        Saves item recommendations to a pickle file.
+
+    Args:
+        dataset (dict): dataset dictionary
+        model_cfg (dict): model configuration
+        item_embeddings (torch.Tensor): product embeddings
+        use_full_graph (bool): Optional; use full graph for evaluation
+
+    Return:
+        Item recommendations in the form of a torch.Tensor of item indices (users, k)
     """
+    # evaluate model on test set
     hit, precision, recall, recommendations = evaluation.evaluate(
-        dataset, item_embeddings, model_cfg['k'], model_cfg['batch-size'], use_test_set=True)
+        dataset, item_embeddings, model_cfg['k'], model_cfg['batch-size'],
+        use_test_set=True, use_full_graph=use_full_graph)
+
+    # print evaluation metrics
     print("Test: hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
         model_cfg['k'], hit, precision, recall))
+
+    # save recommendations
     with open(os.path.join(model_cfg['model-dir'], model_cfg['name'] + "_rec.pkl"), 'wb') as fp:
         pickle.dump(recommendations, fp)
+
     return recommendations
 
 if __name__ == '__main__':
