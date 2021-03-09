@@ -156,13 +156,14 @@ def train(dataset, model_cfg):
 
     # load existing model if exists
     if model_cfg['existing-model'] is not None:
+        print("Loading existing model: {}...".format(model_cfg['existing-model']))
         state = torch.load(
             os.path.join(model_cfg['model-dir'], model_cfg['existing-model']),
             map_location=device
         )
         model.load_state_dict(state['model_state_dict'])
         opt.load_state_dict(state['optimizer_state_dict'])
-        start_epoch = state['epoch']
+        start_epoch = state['epoch'] + 1
 
     # For each batch of head-tail-negative triplets...
     for epoch_id in range(start_epoch, model_cfg['num-epochs'] + start_epoch):
@@ -249,7 +250,7 @@ def test(dataset, model_cfg, item_embeddings):
     """
     hit, precision, recall, recommendations = evaluation.evaluate(
         dataset, item_embeddings, model_cfg['k'], model_cfg['batch-size'], use_test_set=True)
-    print("Validation: hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
+    print("Test: hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
         model_cfg['k'], hit, precision, recall))
     with open(os.path.join(model_cfg['model-dir'], model_cfg['name'] + "_rec.pkl"), 'wb') as fp:
         pickle.dump(recommendations, fp)
