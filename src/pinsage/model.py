@@ -104,7 +104,7 @@ def train(dataset, model_cfg):
     # to learn an individual trainable embedding for each entity
     # Note: using ID's as learnable features makes the model transductive,
     #       remove to make model inductive
-    if model_cfg['id_as_features']:
+    if model_cfg['id-as-features']:
         g.nodes[user_ntype].data['id'] = torch.arange(
             g.number_of_nodes(user_ntype))
         g.nodes[item_ntype].data['id'] = torch.arange(
@@ -185,6 +185,8 @@ def train(dataset, model_cfg):
 
     # For each batch of head-tail-negative triplets...
     print("Training model...")
+    losses = []
+    hits = []
     for epoch_id in range(start_epoch, model_cfg['num-epochs'] + start_epoch):
         batch_losses = []
         # Train
@@ -218,6 +220,7 @@ def train(dataset, model_cfg):
                 t.set_postfix(batch=batch_id, loss=loss.item())
 
         epoch_loss = np.mean(np.array(batch_losses))
+        losses.append((epoch_id, epoch_loss))
 
         # evaluate model on validation set at specified frequency
         if (epoch_id + 1 == model_cfg['num-epochs'] + start_epoch) or \
@@ -244,6 +247,8 @@ def train(dataset, model_cfg):
                 hit, precision, recall, _ = evaluation.evaluate(
                     dataset, h_item, model_cfg['k'], model_cfg['batch-size'])
 
+                hits.append((epoch_id, hit))
+
                 # print("Evaluation @ {}: hit: {}, precision: {}, recall: {}".format(model_cfg['k'], hit, precision, recall))
                 print("Validation (epoch {}): loss: {:.4f}, hit@{}: {:.4f}, precision: {:.4f}, recall: {:.4f}".format(
                     epoch_id, epoch_loss, model_cfg['k'], hit, precision, recall))
@@ -265,7 +270,7 @@ def train(dataset, model_cfg):
             }
             torch.save(state, os.path.join(model_dir, model_fn))
 
-    return h_item, epoch_id
+    return h_item, epoch_id, losses, hits
 
 
 def test(dataset, model_cfg, item_embeddings, epoch_id=None, use_full_graph=False):
@@ -340,6 +345,9 @@ if __name__ == '__main__':
         model_config = json.load(fh)
 
     print("Model Config:", model_config)
-    item_embeddings, epoch_id = train(dataset, model_config)
+    item_embeddings, epoch_id, losses, hits = train(dataset, model_config)
+
+    with open(os.path.join(data_dir, "{}_{}_metrics.pkl".format(model_config['name'], epoch_id)), 'wb'):
+        pickle.dump({"losses": losses, "hits": hits})
 
     test(dataset, model_config, item_embeddings, epoch_id=epoch_id)
