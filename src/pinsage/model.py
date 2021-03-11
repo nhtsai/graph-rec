@@ -347,7 +347,7 @@ if __name__ == '__main__':
     print("Model Config:", model_config)
     item_embeddings, epoch_id, losses, hits = train(dataset, model_config)
 
-    with open(os.path.join(data_dir, "{}_{}_metrics.pkl".format(model_config['name'], epoch_id)), 'wb'):
-        pickle.dump({"losses": losses, "hits": hits})
+    with open(os.path.join(data_dir, "{}_{}_metrics.pkl".format(model_config['name'], epoch_id)), 'wb') as fp:
+        pickle.dump({"losses": losses, "hits": hits}, fp)
 
     test(dataset, model_config, item_embeddings, epoch_id=epoch_id)
