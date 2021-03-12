@@ -203,18 +203,6 @@ def evaluate(dataset, h_item, k, batch_size, use_test_set=False, use_full_graph=
         rc = recall(recommendations, val_matrix)
     return hr, pr, rc, recommendations
 
-# def node_to_item(nodes, id_dict, category_dict):
-#     """Transforms and returns node IDs to real item IDs.
-
-#     Args:
-#         items (): node id list
-#         id_dict (dict): {node id: item category id}
-#         category_dict (dict): {item category id: real item id}
-#     """
-#     ids = [id_dict[i] for i in nodes]
-#     ids = [category_dict[i] for i in ids]
-#     return ids
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset_path', type=str)
