@@ -104,12 +104,14 @@ By combining the embedding approaches of visual, textual, and graph features, ou
 ## Results
 To evaluate the product recommendations of our models, we used a metric called hit rate for the top-K recommended products using K = 500. Given an unseen product, the GraphSAGE model generates the top-K closest embedded product nodes to recommend. If at least one of the recommended products is connected to the unseen product, it is considered a hit. We calculate the hit rate at K as the number of hits over the number of unseen test products. Similarly, the PinSage model generates the top-K closest embedded product nodes to recommend for each user. If at least one of the recommended products is reviewed by the user in the test matrix, it is considered a hit. We calculate the hit rate at K as the number of hits over the number of users.
 
-| Model | Hit Rate | Loss |
-| --- | --- | --- |
-| GraphSAGE | 0.6590 | 0.1209 |
-| PinSage | 0.1563 | 0.2965 |
 
-<p align="center">Table 1. Model Evaluation Results.</p>
+|   Model   | Hit Rate |  Loss  |
+| --------- | -------- | ------ |
+| GraphSAGE |  0.6590  | 0.1209 |
+|  PinSage  |  0.1563  | 0.2965 |
+
+
+<p align="center"><em>Table 1. Model Evaluation Results.</em></p>
 
 <p align="center">
   <img width="600" src="/graph-rec/images/table2.png" title="Sample GraphSAGE Recommendations.">
