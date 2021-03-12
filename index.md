@@ -17,7 +17,7 @@ Our work builds upon the existing advancements in applying graph neural networks
 We use the Amazon Electronics datasets from Professor Julian McAuley. We use the Electronics product metadata dataset, Electronics 5-core reviews dataset, and the processed Electronics product image features. The 5-core reviews dataset represents a subset of Electronics product reviews, in which every product has at least 5 product reviews and every reviewer has written at least 5 reviews. Each product has a variety of features like price, title, description, sales rank, brand, product categories, an image that has been passed through a deep convolutional neural network to produce image embedding vectors consisting of 4096 floats<sup>[4]</sup>. Each review has features like overall rating, a helpfulness ratio, product review, product review summary, and the review time. 
 
 <p align="center">
-  <img width="600" src="/images/figure1.png" title="Overview of Model and Data Pipeline.">
+  <img width="600" src="/graph-rec/images/figure1.png" title="Overview of Model and Data Pipeline.">
 </p>
 
 ### GraphSAGE Data Preprocessing
@@ -28,7 +28,7 @@ We then created a graph of all nodes and edges and then divided the train and te
 ### GraphSAGE Graph
 
 <p align="center">
-  <img height="300" src="/images/figure2.png" title="Diagram of Product Graph for GraphSAGE.">
+  <img height="300" src="/graph-rec/images/figure2.png" title="Diagram of Product Graph for GraphSAGE.">
 </p>
 
 Our GraphSage graph is a homogenous graph consisting of products as nodes and edges connected on whether those nodes were purchased together. With 19,532 nodes and 430,411 edges we had a lot to work with. Each node contained product title text features and also a label, it’s specific category. We split the edges into two, positive and negative edges. The positive edges (Green links in Figure 2) describe actual co-purchased relationships between two products and the negative edges (Red links in Figure 2) is just the inverse, describing absolutely no relationship.
@@ -39,7 +39,7 @@ In the reviews dataset, products are identified by their unique ASINs, and users
 ### Pinsage Graph
 
 <p align="center">
-  <img height="300" src="/images/figure3.png" title="Diagram of Bipartite User-Product Graph for PinSage.">
+  <img height="300" src="/graph-rec/images/figure3.png" title="Diagram of Bipartite User-Product Graph for PinSage.">
 </p>
 
 Using products represented by unique ASINs and users represented by unique reviewer IDs, we build a bipartite, heterogeneous graph, using reviews as undirected edges between users and products. For the products, we use the product price and image representations as features. For the review edges, we add overall rating, helpfulness, and review time as features. We did not have any user features to use. The full graph has 62,521 product nodes, 192,403 user nodes, and 1,674,664 review edges. The training graph has 62,521 product nodes, 192,403 user nodes, and 1,289,858 review edges. The validation and test matrices have 192,403 edges each.
@@ -49,13 +49,13 @@ Using products represented by unique ASINs and users represented by unique revie
 ### GraphSAGE Model
 
 <p align="center">
-  <img width="600" src="/images/figure4.png" title="Diagram of GraphSAGE Algorithm.">
+  <img width="600" src="/graph-rec/images/figure4.png" title="Diagram of GraphSAGE Algorithm.">
 </p>
 
 The GraphSAGE model<sup>[3]</sup> is a slight twist on the graph convolutional model<sup>[2]</sup>. GraphSAGE samples a target node's neighbors and their neighboring features and then aggregates them all together to learn and hopefully predict the features of the target node. Our GraphSAGE model works solely on the node feature (product title), and the relationships through the edges of co-purchased products.
 
 <p align="center">
-  <img width="400" src="/images/figure5.png" title="GraphSAGE Embedding Algorithm.">
+  <img width="400" src="/graph-rec/images/figure5.png" title="GraphSAGE Embedding Algorithm.">
 </p>
 
 Our GraphSAGE model consisted of two layers, each aggregating neighbors based on mean. At each step of our model, our model learns through calculating the dot product of both the source and target node and then applying that feature onto an edge. As we have both positive and negative edges describing true and false co-purchased relationships between products, we compared both edges to our model through a Dot Predictor to then calculated our total loss through binary cross entropy loss. 
@@ -63,19 +63,19 @@ Our GraphSAGE model consisted of two layers, each aggregating neighbors based on
 ### PinSage Model
 
 <p align="center">
-  <img width="600" src="/images/figure6.png" title="Diagram of PinSage Algorithm.">
+  <img width="600" src="/graph-rec/images/figure6.png" title="Diagram of PinSage Algorithm.">
 </p>
 
 The second model is based on PinSage<sup>[1]</sup> and learns to generate node embeddings using visual features, textual features, other product features, and graph features. Visual features are image embeddings generated by passing product images through a deep convolutional neural network[4]. Textual features are processed using Pytorch’s TorchText library to create vocabularies used in training Bag of Words models. The PinSage model takes in a heterogeneous, bipartite graph connecting user nodes to product nodes through reviews. Similar to the GraphSAGE algorithm, the PinSage model aggregates neighboring node features using an element-wise aggregation function, concatenates the aggregated neighborhood representation to the node’s current representation before passing the entire vector through a neural network layer and normalized to get a final representation. This final node embedding represents both the node itself and its local graph neighborhood.
 
 <p align="center">
-  <img width="400" src="/images/figure7.png" title="PinSage Embedding Algorithm.">
+  <img width="400" src="/graph-rec/images/figure7.png" title="PinSage Embedding Algorithm.">
 </p>
 
 Unlike the GraphSAGE algorithm, PinSage determines which neighboring nodes are best used for aggregation for the best representation. The PinSage sampler constructs node neighborhoods by performing multiple random walks, keeping track of which neighboring nodes are visited most often. The most visited neighbors are considered more important for aggregation. This method allows the model to aggregate neighboring nodes based on a factor of importance in an aggregation process called ‘importance pooling’.
 
 <p align="center">
-  <img height="400" src="/images/figure8.png" title="PinSage Sampling and Embedding Algorithm.">
+  <img height="400" src="/graph-rec/images/figure8.png" title="PinSage Sampling and Embedding Algorithm.">
 </p>
 
 Though the PinSage model is a supervised model based on Pinterest data with ground truth edge labels, we adapted our model to an unsupervised context, where the model predicts whether two products are reviewed by the same user. Additionally, we add product node and user node IDs as features to create learnable embeddings for each node. However, this makes the model transductive and can be excluded for inductive applications.
