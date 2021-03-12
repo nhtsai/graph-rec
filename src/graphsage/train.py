@@ -16,7 +16,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 import dgl.data
 
-def train(fp, epochs, hit=True):
+def train(fp="../../data/meta_Electronics.json.gz", epochs=100, hit=True):
     '''
     Processes Data & Trains GraphSAGE Model
 
@@ -63,5 +63,8 @@ def train(fp, epochs, hit=True):
         print(np.mean(hits))
     
     return h, model
+
+if __name__ == '__main__':
+    train()
 
 
