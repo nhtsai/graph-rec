@@ -110,6 +110,18 @@ To evaluate the product recommendations of our models, we used a metric called h
 | PinSage | 0.1563 | 0.2965 |
 <p align="center">Table 1. Model Evaluation Results.</p>
 
+<p align="center">
+  <img width="600" src="/graph-rec/images/table2.png" title="Sample GraphSAGE Recommendations.">
+  <br>
+  <em>Table 2. Sample GraphSAGE Recommendations.</em>
+</p>
+
+<p align="center">
+  <img width="600" src="/graph-rec/images/table3.png" title="Sample PinSage Recommendations.">
+  <br>
+  <em>Table 3. Sample PinSage Recommendations.</em>
+</p>
+
 ## Discussion
 Given the metrics of hit rate and loss, the unsupervised GraphSAGE model performed better than the unsupervised PinSage model. Though the results are not ‘state of the art’, our results show us that product recommendation can be accomplished using graph neural networks. A reason the GraphSAGE model performs better than the PinSage model can be explained by the different product graphs used. Products bought together may be more helpful in product recommendation than products reviewed by the same user because a user may review many, completely different products that may not be helpful for product recommendation.
 
