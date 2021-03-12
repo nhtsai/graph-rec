@@ -108,6 +108,7 @@ To evaluate the product recommendations of our models, we used a metric called h
 | --- | --- | --- |
 | GraphSAGE | 0.6590 | 0.1209 |
 | PinSage | 0.1563 | 0.2965 |
+
 <p align="center">Table 1. Model Evaluation Results.</p>
 
 <p align="center">
