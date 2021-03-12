@@ -16,6 +16,13 @@
 
 GraphSAGE applied as a recommender system for Amazon Product Data
 
-## How to run
+Node Features Used:
+Product Title Text Features
+
+Edges:
+Co-Purchased Products
+
+
+## How To Run
 
 python train.py 
